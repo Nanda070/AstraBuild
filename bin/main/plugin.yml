@@ -1,0 +1,6 @@
+name: AstraBuild
+version: '${project.version}'
+main: com.astrabuild.AstraBuildPlugin
+api-version: '1.21'
+depend: [AstraSMP]
+description: Industrial and Logistics expansion for Astra
