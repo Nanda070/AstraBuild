@@ -1,5 +1,6 @@
 package com.astrabuild.quarry;
 
+import com.astrabuild.events.EventManager;
 import com.astrabuild.network.DeliveryService;
 import com.astrabuild.network.PipeNetwork;
 import com.astrabuild.storage.MachineDataStorage;
@@ -19,12 +20,14 @@ public class QuarryManager {
     private final Map<Location, QuarryWorker> activeQuarries = new ConcurrentHashMap<>();
     private final BukkitTask tickerTask;
     private final MachineDataStorage storage;
+    private final EventManager eventManager;
 
-    public QuarryManager(Plugin plugin, PipeNetwork pipeNetwork, DeliveryService deliveryService, MachineDataStorage storage) {
+    public QuarryManager(Plugin plugin, PipeNetwork pipeNetwork, DeliveryService deliveryService, MachineDataStorage storage, EventManager eventManager) {
         this.plugin = plugin;
         this.pipeNetwork = pipeNetwork;
         this.deliveryService = deliveryService;
         this.storage = storage;
+        this.eventManager = eventManager;
 
         // Изменено с 5L на 1L. Тикер работает каждый игровой тик.
         this.tickerTask = plugin.getServer().getScheduler().runTaskTimer(plugin, this::tickAll, 20L, 1L);
@@ -33,7 +36,7 @@ public class QuarryManager {
     public void createAndStart(Location controller, Location pos1, Location pos2) {
         if (activeQuarries.containsKey(controller)) return;
 
-        QuarryWorker worker = new QuarryWorker(plugin, controller, pipeNetwork, deliveryService, storage, pos1, pos2);
+        QuarryWorker worker = new QuarryWorker(plugin, controller, pipeNetwork, deliveryService, storage, eventManager, pos1, pos2);
         activeQuarries.put(controller, worker);
     }
 
@@ -63,4 +66,4 @@ public class QuarryManager {
         activeQuarries.values().forEach(QuarryWorker::halt);
         activeQuarries.clear();
     }
-}
+}

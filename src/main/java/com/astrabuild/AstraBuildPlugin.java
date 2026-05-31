@@ -1,5 +1,6 @@
 package com.astrabuild;
 
+import com.astrabuild.events.EventManager;
 import com.astrabuild.item.RecipeRegistry;
 import com.astrabuild.listener.BlockListener;
 import com.astrabuild.listener.ChunkScanner;
@@ -17,16 +18,22 @@ public class AstraBuildPlugin extends JavaPlugin {
     private MachineDataStorage machineDataStorage;
     private DeliveryService deliveryService;
     private RecipeRegistry recipeRegistry;
+    private EventManager eventManager;
 
     @Override
     public void onEnable() {
+        saveDefaultConfig();
+
         // Инициализация слоя данных и логистики
         this.machineDataStorage = new MachineDataStorage(this);
         this.deliveryService = new DeliveryService(this);
         this.pipeNetwork = new PipeNetwork();
         
+        // Инициализация EventManager
+        this.eventManager = new EventManager(this);
+        
         // Инициализация оркестратора механизмов
-        this.quarryManager = new QuarryManager(this, pipeNetwork, deliveryService, machineDataStorage);
+        this.quarryManager = new QuarryManager(this, pipeNetwork, deliveryService, machineDataStorage, eventManager);
         
         // Регистрация крафтов
         this.recipeRegistry = new RecipeRegistry(this);
@@ -35,7 +42,7 @@ public class AstraBuildPlugin extends JavaPlugin {
         // Регистрация слушателей
         getServer().getPluginManager().registerEvents(new BlockListener(pipeNetwork, quarryManager, machineDataStorage, recipeRegistry), this);
         getServer().getPluginManager().registerEvents(new ChunkScanner(pipeNetwork, quarryManager, machineDataStorage), this);
-        getServer().getPluginManager().registerEvents(new com.astrabuild.listener.GuiListener(this, machineDataStorage), this);
+        getServer().getPluginManager().registerEvents(new GuiListener(this, machineDataStorage, eventManager, recipeRegistry), this);
         
         getLogger().info("AstraBuild initialized. Logistics and Industrial systems online.");
     }
@@ -51,4 +58,4 @@ public class AstraBuildPlugin extends JavaPlugin {
     public PipeNetwork getPipeNetwork() {
         return pipeNetwork;
     }
-}
+}

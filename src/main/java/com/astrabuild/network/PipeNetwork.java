@@ -2,7 +2,6 @@ package com.astrabuild.network;
 
 import com.astrabuild.model.NetworkNode;
 import org.bukkit.Location;
-import org.bukkit.World;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;

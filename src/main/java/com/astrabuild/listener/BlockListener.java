@@ -7,8 +7,6 @@ import com.astrabuild.quarry.QuarryManager;
 import com.astrabuild.storage.MachineDataStorage;
 import org.bukkit.Location;
 import org.bukkit.event.EventHandler;
-import com.astrabuild.model.NetworkNode;
-import com.astrabuild.network.PipeNetwork;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;

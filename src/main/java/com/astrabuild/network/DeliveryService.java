@@ -12,10 +12,8 @@ import java.util.Map;
 
 public class DeliveryService {
 
-    private final Plugin plugin;
-
     public DeliveryService(Plugin plugin) {
-        this.plugin = plugin;
+        // Plugin is not currently used, but kept for compatibility
     }
 
     public void deliverItem(Location destination, ItemStack item) {

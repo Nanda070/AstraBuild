@@ -1,5 +1,6 @@
 package com.astrabuild.gui;
 
+import com.astrabuild.item.RecipeRegistry;
 import com.astrabuild.storage.MachineDataStorage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
@@ -12,15 +13,18 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.List;
 
+@SuppressWarnings("deprecation")
 public class QuarryGui implements InventoryHolder {
 
     private final Inventory inventory;
     private final Block quarryBlock;
     private final MachineDataStorage storage;
+    private final RecipeRegistry recipeRegistry;
 
-    public QuarryGui(Block quarryBlock, MachineDataStorage storage) {
+    public QuarryGui(Block quarryBlock, MachineDataStorage storage, RecipeRegistry recipeRegistry) {
         this.quarryBlock = quarryBlock;
         this.storage = storage;
+        this.recipeRegistry = recipeRegistry;
         // Размер кратен 9. 27 = 3 ряда.
         this.inventory = Bukkit.createInventory(this, 27, "§8Контроллер карьера");
         setupLayout();
@@ -58,6 +62,32 @@ public class QuarryGui implements InventoryHolder {
         ));
         info.setItemMeta(meta);
         inventory.setItem(15, info);
+
+        // Обновление слотов модулей
+        updateUpgradeSlot(12, "UPGRADE_FORTUNE");
+        updateUpgradeSlot(13, "UPGRADE_SILK_TOUCH");
+        updateUpgradeSlot(14, "UPGRADE_OVERCLOCKER");
+    }
+
+    private void updateUpgradeSlot(int slot, String type) {
+        if (storage.hasUpgrade(quarryBlock, type)) {
+            inventory.setItem(slot, recipeRegistry.getMachineItem(type));
+        } else {
+            ItemStack glass = new ItemStack(Material.RED_STAINED_GLASS_PANE);
+            ItemMeta meta = glass.getItemMeta();
+            meta.setDisplayName("§c" + getUpgradeName(type) + " не установлен");
+            glass.setItemMeta(meta);
+            inventory.setItem(slot, glass);
+        }
+    }
+
+    private String getUpgradeName(String type) {
+        return switch (type) {
+            case "UPGRADE_FORTUNE" -> "Чип Удачи II";
+            case "UPGRADE_SILK_TOUCH" -> "Чип Шелкового касания";
+            case "UPGRADE_OVERCLOCKER" -> "Чип Оверклокера";
+            default -> "Апгрейд";
+        };
     }
 
     public Block getQuarryBlock() {
@@ -72,4 +102,4 @@ public class QuarryGui implements InventoryHolder {
     public void open(Player player) {
         player.openInventory(inventory);
     }
-}
+}

@@ -13,11 +13,46 @@ public class MachineDataStorage {
     private final NamespacedKey machineTypeKey;
     private final NamespacedKey boundsKey;
     private final NamespacedKey energyKey;
+    private final NamespacedKey upgradeFortuneKey;
+    private final NamespacedKey upgradeSilkTouchKey;
+    private final NamespacedKey upgradeOverclockerKey;
 
     public MachineDataStorage(Plugin plugin) {
         this.machineTypeKey = new NamespacedKey(plugin, "machine_type");
         this.boundsKey = new NamespacedKey(plugin, "quarry_bounds");
         this.energyKey = new NamespacedKey(plugin, "machine_energy");
+        this.upgradeFortuneKey = new NamespacedKey(plugin, "upgrade_fortune");
+        this.upgradeSilkTouchKey = new NamespacedKey(plugin, "upgrade_silk_touch");
+        this.upgradeOverclockerKey = new NamespacedKey(plugin, "upgrade_overclocker");
+    }
+
+    public boolean hasUpgrade(Block block, String type) {
+        if (block.getState() instanceof TileState state) {
+            NamespacedKey key = getUpgradeKey(type);
+            if (key != null) {
+                return state.getPersistentDataContainer().getOrDefault(key, PersistentDataType.BYTE, (byte) 0) == (byte) 1;
+            }
+        }
+        return false;
+    }
+
+    public void setUpgrade(Block block, String type, boolean hasUpgrade) {
+        if (block.getState() instanceof TileState state) {
+            NamespacedKey key = getUpgradeKey(type);
+            if (key != null) {
+                state.getPersistentDataContainer().set(key, PersistentDataType.BYTE, hasUpgrade ? (byte) 1 : (byte) 0);
+                state.update();
+            }
+        }
+    }
+
+    private NamespacedKey getUpgradeKey(String type) {
+        return switch (type) {
+            case "UPGRADE_FORTUNE" -> upgradeFortuneKey;
+            case "UPGRADE_SILK_TOUCH" -> upgradeSilkTouchKey;
+            case "UPGRADE_OVERCLOCKER" -> upgradeOverclockerKey;
+            default -> null;
+        };
     }
 
     /**
@@ -108,7 +143,10 @@ public class MachineDataStorage {
             PersistentDataContainer pdc = state.getPersistentDataContainer();
             pdc.remove(machineTypeKey);
             pdc.remove(boundsKey);
+            pdc.remove(upgradeFortuneKey);
+            pdc.remove(upgradeSilkTouchKey);
+            pdc.remove(upgradeOverclockerKey);
             state.update();
         }
     }
-}
+}

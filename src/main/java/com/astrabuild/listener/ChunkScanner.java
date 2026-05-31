@@ -9,8 +9,6 @@ import org.bukkit.Location;
 import org.bukkit.block.BlockState;
 import org.bukkit.block.TileState;
 import org.bukkit.event.EventHandler;
-import com.astrabuild.model.NetworkNode;
-import com.astrabuild.network.PipeNetwork;
 import org.bukkit.event.Listener;
 import org.bukkit.event.world.ChunkLoadEvent;
 import org.bukkit.event.world.ChunkUnloadEvent;
