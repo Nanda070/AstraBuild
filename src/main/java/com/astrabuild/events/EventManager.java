@@ -88,7 +88,7 @@ public class EventManager {
                 connection.setDoOutput(true);
 
                 String jsonPayload = String.format(
-                        "{\"content\": \"<@&%s> Мудрецы объявили неделю [%s]! Эффект: [%s]\"}",
+                        "{\"content\": \"<@&%s> Мудрецы объявили неделю %s! Эффект: %s\"}",
                         mentionRoleId, newEvent.getTitle(), newEvent.getDescription()
                 );
 
