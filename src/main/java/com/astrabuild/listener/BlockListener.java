@@ -68,6 +68,7 @@ public class BlockListener implements Listener {
             }
             case "PIPE" -> network.registerNode(loc, NetworkNode.NodeType.PIPE);
             case "CONNECTOR_INSERT" -> network.registerNode(loc, NetworkNode.NodeType.CONNECTOR_INSERT);
+            case "SATELLITE_TERMINAL" -> network.registerNode(loc, NetworkNode.NodeType.MACHINE_SATELLITE);
         }
     }
 

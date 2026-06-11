@@ -29,6 +29,7 @@ public class RecipeRegistry {
         registerUpgradeFortune();
         registerUpgradeSilkTouch();
         registerUpgradeOverclocker();
+        registerSatelliteTerminal();
     }
 
     public ItemStack getMachineItem(String type) {
@@ -39,6 +40,8 @@ public class RecipeRegistry {
             case "UPGRADE_FORTUNE" -> createUpgradeFortune();
             case "UPGRADE_SILK_TOUCH" -> createUpgradeSilkTouch();
             case "UPGRADE_OVERCLOCKER" -> createUpgradeOverclocker();
+            case "SATELLITE_TERMINAL" -> createSatelliteTerminalItem();
+            case "ORBITAL_REMOTE" -> createOrbitalRemoteItem();
             default -> null;
         };
     }
@@ -98,6 +101,26 @@ public class RecipeRegistry {
         meta.setDisplayName("§cЧип Оверклокера");
         meta.setLore(List.of("§7Ускоряет работу карьера,", "§7но увеличивает расход энергии."));
         meta.getPersistentDataContainer().set(machineItemKey, PersistentDataType.STRING, "UPGRADE_OVERCLOCKER");
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private ItemStack createSatelliteTerminalItem() {
+        ItemStack item = new ItemStack(Material.BARREL);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName("§dСпутниковый Терминал");
+        meta.setLore(List.of("§7Накапливает колоссальное количество", "§7энергии для вызова орбитального удара."));
+        meta.getPersistentDataContainer().set(machineItemKey, PersistentDataType.STRING, "SATELLITE_TERMINAL");
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private ItemStack createOrbitalRemoteItem() {
+        ItemStack item = new ItemStack(Material.GOLDEN_HOE);
+        ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName("§cПульт Орбитального Удара");
+        meta.setLore(List.of("§7[ЛКМ] - Смена режима", "§7[ПКМ] - Запуск протокола уничтожения", "", "§eРежим: §cNuke (Радиус 30)"));
+        meta.getPersistentDataContainer().set(machineItemKey, PersistentDataType.STRING, "ORBITAL_REMOTE");
         item.setItemMeta(meta);
         return item;
     }
@@ -163,6 +186,19 @@ public class RecipeRegistry {
         recipe.shape("RRR", "ROR", "RRR");
         recipe.setIngredient('R', Material.REDSTONE);
         recipe.setIngredient('O', Material.OBSERVER);
+        Bukkit.addRecipe(recipe);
+    }
+
+    private void registerSatelliteTerminal() {
+        ItemStack terminal = getMachineItem("SATELLITE_TERMINAL");
+        NamespacedKey key = new NamespacedKey(plugin, "astrabuild_satellite_terminal");
+        ShapedRecipe recipe = new ShapedRecipe(key, terminal);
+        recipe.shape("NEN", "DBD", "NON");
+        recipe.setIngredient('N', Material.NETHERITE_BLOCK);
+        recipe.setIngredient('E', Material.NETHER_STAR);
+        recipe.setIngredient('D', Material.DIAMOND_BLOCK);
+        recipe.setIngredient('B', Material.BEACON);
+        recipe.setIngredient('O', Material.END_CRYSTAL);
         Bukkit.addRecipe(recipe);
     }
     

@@ -49,6 +49,7 @@ public class ChunkScanner implements Listener {
                 case "PIPE" -> network.registerNode(loc, NetworkNode.NodeType.PIPE);
                 case "CONNECTOR_INSERT" -> network.registerNode(loc, NetworkNode.NodeType.CONNECTOR_INSERT);
                 case "CONNECTOR_EXTRACT" -> network.registerNode(loc, NetworkNode.NodeType.CONNECTOR_EXTRACT);
+                case "SATELLITE_TERMINAL" -> network.registerNode(loc, NetworkNode.NodeType.MACHINE_SATELLITE);
             }
         }
     }

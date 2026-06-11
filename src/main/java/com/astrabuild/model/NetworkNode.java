@@ -7,6 +7,7 @@ public record NetworkNode(Location location, NodeType type) {
         PIPE,
         CONNECTOR_EXTRACT,
         CONNECTOR_INSERT,
-        MACHINE_QUARRY
+        MACHINE_QUARRY,
+        MACHINE_SATELLITE
     }
 }

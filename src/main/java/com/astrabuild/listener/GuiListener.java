@@ -2,7 +2,11 @@ package com.astrabuild.listener;
 
 import com.astrabuild.events.EventManager;
 import com.astrabuild.events.EventType;
+import com.astrabuild.gui.AdminGui;
+import com.astrabuild.gui.CraftsGui;
 import com.astrabuild.gui.QuarryGui;
+import com.astrabuild.gui.RecipeViewGui;
+import com.astrabuild.gui.SatelliteTerminalGui;
 import com.astrabuild.item.RecipeRegistry;
 import com.astrabuild.storage.MachineDataStorage;
 import com.astrabuild.visual.DisplayUtil;
@@ -39,6 +43,13 @@ public class GuiListener implements Listener {
         Block block = event.getClickedBlock();
         if (block == null) return;
 
+        // Не открываем GUI механизма, если в руке Пульт (его обрабатывает OrbitalStrikeListener)
+        ItemStack handItem = event.getItem();
+        if (handItem != null && recipeRegistry.getMachineItemType(handItem) != null
+                && "ORBITAL_REMOTE".equals(recipeRegistry.getMachineItemType(handItem))) {
+            return;
+        }
+
         String type = storage.getMachineType(block);
         if ("QUARRY".equals(type)) {
             event.setCancelled(true);
@@ -50,13 +61,29 @@ public class GuiListener implements Listener {
             if (bounds != null) {
                 DisplayUtil.highlightBounds(plugin, block.getLocation(), bounds[0], bounds[1]);
             }
+        } else if ("SATELLITE_TERMINAL".equals(type)) {
+            event.setCancelled(true);
+            SatelliteTerminalGui gui = new SatelliteTerminalGui(block, storage);
+            gui.open(event.getPlayer());
         }
     }
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent event) {
-        if (!(event.getInventory().getHolder() instanceof QuarryGui gui)) return;
+        if (event.getInventory().getHolder() instanceof QuarryGui gui) {
+            handleQuarryGuiClick(event, gui);
+        } else if (event.getInventory().getHolder() instanceof SatelliteTerminalGui gui) {
+            handleSatelliteTerminalGuiClick(event, gui);
+        } else if (event.getInventory().getHolder() instanceof CraftsGui gui) {
+            handleCraftsGuiClick(event, gui);
+        } else if (event.getInventory().getHolder() instanceof AdminGui gui) {
+            handleAdminGuiClick(event, gui);
+        } else if (event.getInventory().getHolder() instanceof RecipeViewGui gui) {
+            handleRecipeViewGuiClick(event, gui);
+        }
+    }
 
+    private void handleQuarryGuiClick(InventoryClickEvent event, QuarryGui gui) {
         event.setCancelled(true);
 
         Player player = (Player) event.getWhoClicked();
@@ -108,6 +135,58 @@ public class GuiListener implements Listener {
                 player.getInventory().addItem(recipeRegistry.getMachineItem(upgradeType));
                 gui.updateInfoItem();
             }
+        }
+    }
+
+    private void handleSatelliteTerminalGuiClick(InventoryClickEvent event, SatelliteTerminalGui gui) {
+        event.setCancelled(true);
+
+        Player player = (Player) event.getWhoClicked();
+        ItemStack clickedItem = event.getCurrentItem();
+        int slot = event.getRawSlot();
+
+        if (slot == 15) {
+            if (storage.getEnergy(gui.getTerminalBlock()) >= SatelliteTerminalGui.MAX_ENERGY) {
+                storage.consumeEnergy(gui.getTerminalBlock(), SatelliteTerminalGui.MAX_ENERGY);
+                player.getInventory().addItem(recipeRegistry.getMachineItem("ORBITAL_REMOTE"));
+                gui.updateInfoItem();
+            }
+        } else if (slot >= 27 && clickedItem != null && !clickedItem.getType().isAir()) {
+            int energyValue = getFuelValue(clickedItem.getType());
+            if (energyValue > 0) {
+                int currentEnergy = storage.getEnergy(gui.getTerminalBlock());
+                if (currentEnergy < SatelliteTerminalGui.MAX_ENERGY) {
+                    storage.addEnergy(gui.getTerminalBlock(), energyValue);
+                    clickedItem.setAmount(clickedItem.getAmount() - 1);
+                    if (clickedItem.getType() == Material.LAVA_BUCKET) {
+                        player.getInventory().addItem(new ItemStack(Material.BUCKET));
+                    }
+                    gui.updateInfoItem();
+                }
+            }
+        }
+    }
+
+    private void handleCraftsGuiClick(InventoryClickEvent event, CraftsGui gui) {
+        event.setCancelled(true);
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked != null && !clicked.getType().isAir()) {
+            new RecipeViewGui(clicked).open((Player) event.getWhoClicked());
+        }
+    }
+
+    private void handleAdminGuiClick(InventoryClickEvent event, AdminGui gui) {
+        event.setCancelled(true);
+        ItemStack clicked = event.getCurrentItem();
+        if (clicked != null && !clicked.getType().isAir()) {
+            event.getWhoClicked().getInventory().addItem(clicked.clone());
+        }
+    }
+
+    private void handleRecipeViewGuiClick(InventoryClickEvent event, RecipeViewGui gui) {
+        event.setCancelled(true);
+        if (event.getRawSlot() == 18) {
+            new CraftsGui(recipeRegistry).open((Player) event.getWhoClicked());
         }
     }
 

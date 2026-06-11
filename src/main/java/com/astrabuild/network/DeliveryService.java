@@ -7,13 +7,16 @@ import org.bukkit.block.Container;
 import org.bukkit.block.data.Directional;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.plugin.Plugin;
+import com.astrabuild.storage.MachineDataStorage;
 
 import java.util.Map;
 
 public class DeliveryService {
 
-    public DeliveryService(Plugin plugin) {
-        // Plugin is not currently used, but kept for compatibility
+    private final MachineDataStorage storage;
+
+    public DeliveryService(Plugin plugin, MachineDataStorage storage) {
+        this.storage = storage;
     }
 
     public void deliverItem(Location destination, ItemStack item) {
@@ -26,6 +29,17 @@ public class DeliveryService {
         if (state.getBlockData() instanceof Directional directional) {
             Block targetBlock = connectorBlock.getRelative(directional.getFacing());
             
+            if ("SATELLITE_TERMINAL".equals(storage.getMachineType(targetBlock))) {
+                int fuelVal = getFuelValue(item.getType());
+                if (fuelVal > 0) {
+                    int currentEnergy = storage.getEnergy(targetBlock);
+                    if (currentEnergy < com.astrabuild.gui.SatelliteTerminalGui.MAX_ENERGY) {
+                        storage.addEnergy(targetBlock, fuelVal * item.getAmount());
+                        return;
+                    }
+                }
+            }
+
             if (targetBlock.getState() instanceof Container chest) {
                 Map<Integer, ItemStack> leftovers = chest.getInventory().addItem(item);
                 if (!leftovers.isEmpty()) dropExcess(destination, leftovers);
@@ -49,5 +63,15 @@ public class DeliveryService {
         for (ItemStack leftover : items.values()) {
             dropLoc.getWorld().dropItemNaturally(dropLoc, leftover);
         }
+    }
+
+    private int getFuelValue(org.bukkit.Material material) {
+        return switch (material) {
+            case COAL, CHARCOAL -> 80;
+            case COAL_BLOCK -> 800;
+            case LAVA_BUCKET -> 1000;
+            case BLAZE_ROD -> 120;
+            default -> 0;
+        };
     }
 }

@@ -9,6 +9,9 @@ import com.astrabuild.network.DeliveryService;
 import com.astrabuild.network.PipeNetwork;
 import com.astrabuild.quarry.QuarryManager;
 import com.astrabuild.storage.MachineDataStorage;
+import com.astrabuild.strike.OrbitalStrikeListener;
+import com.astrabuild.strike.OrbitalStrikeManager;
+import com.astrabuild.command.AstraBuildCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class AstraBuildPlugin extends JavaPlugin {
@@ -26,7 +29,7 @@ public class AstraBuildPlugin extends JavaPlugin {
 
         // Инициализация слоя данных и логистики
         this.machineDataStorage = new MachineDataStorage(this);
-        this.deliveryService = new DeliveryService(this);
+        this.deliveryService = new DeliveryService(this, machineDataStorage);
         this.pipeNetwork = new PipeNetwork();
         
         // Инициализация EventManager
@@ -39,10 +42,17 @@ public class AstraBuildPlugin extends JavaPlugin {
         this.recipeRegistry = new RecipeRegistry(this);
         this.recipeRegistry.registerAll();
 
+        OrbitalStrikeManager strikeManager = new OrbitalStrikeManager(this);
+
         // Регистрация слушателей
         getServer().getPluginManager().registerEvents(new BlockListener(pipeNetwork, quarryManager, machineDataStorage, recipeRegistry), this);
         getServer().getPluginManager().registerEvents(new ChunkScanner(pipeNetwork, quarryManager, machineDataStorage), this);
         getServer().getPluginManager().registerEvents(new GuiListener(this, machineDataStorage, eventManager, recipeRegistry), this);
+        getServer().getPluginManager().registerEvents(new OrbitalStrikeListener(this, strikeManager, recipeRegistry), this);
+        
+        AstraBuildCommand cmd = new AstraBuildCommand(recipeRegistry);
+        getCommand("astrabuild").setExecutor(cmd);
+        getCommand("astrabuild").setTabCompleter(cmd);
         
         getLogger().info("AstraBuild initialized. Logistics and Industrial systems online.");
     }
