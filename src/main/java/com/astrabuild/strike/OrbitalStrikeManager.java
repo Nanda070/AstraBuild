@@ -1,7 +1,6 @@
 package com.astrabuild.strike;
 
 import org.bukkit.Location;
-import org.bukkit.Material;
 import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
@@ -11,9 +10,6 @@ import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitRunnable;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class OrbitalStrikeManager {
 
@@ -43,14 +39,16 @@ public class OrbitalStrikeManager {
                 // Рисуем лазер реже (чтобы частицы не висели вечно)
                 if (ticks % 5 == 0) {
                     for (int y = targetLoc.getBlockY(); y < 319; y += 4) {
-                        world.spawnParticle(Particle.DUST, targetLoc.clone().add(0.5, y - targetLoc.getBlockY(), 0.5), 2, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.RED, 3.0f));
+                        world.spawnParticle(Particle.DUST, targetLoc.clone().add(0.5, y - targetLoc.getBlockY(), 0.5),
+                                2, 0, 0, 0, new Particle.DustOptions(org.bukkit.Color.RED, 3.0f));
                     }
                 }
 
                 // Звук тревоги
                 if (ticks % 10 == 0) {
                     world.playSound(targetLoc, Sound.BLOCK_BEACON_ACTIVATE, 5.0f, 2.0f);
-                    if (ticks == 0) world.playSound(targetLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 5.0f, 0.5f);
+                    if (ticks == 0)
+                        world.playSound(targetLoc, Sound.ENTITY_ENDER_DRAGON_GROWL, 5.0f, 0.5f);
                 }
 
                 ticks++;
@@ -60,7 +58,8 @@ public class OrbitalStrikeManager {
 
     private void executeStrike(Player player, Location center, String mode) {
         World world = center.getWorld();
-        if (world == null) return;
+        if (world == null)
+            return;
 
         world.playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 10.0f, 0.5f);
 
@@ -96,7 +95,7 @@ public class OrbitalStrikeManager {
     private void spawnTNTCircle(World world, Location center, int maxRadius) {
         // Центральный усиленный ТНТ
         spawnTNT(world, center, 8.0f);
-        
+
         // Кольца ТНТ
         for (int r = 4; r <= maxRadius; r += 4) {
             int tntCount = r * 2; // Чем больше радиус, тем больше ТНТ по кругу
@@ -104,7 +103,7 @@ public class OrbitalStrikeManager {
                 double angle = 2 * Math.PI * i / tntCount;
                 double x = center.getX() + r * Math.cos(angle);
                 double z = center.getZ() + r * Math.sin(angle);
-                
+
                 // Спавним на уровне центра или чуть выше, чтобы разнести крыши
                 Location tntLoc = new Location(world, x, center.getY() + 1, z);
                 spawnTNT(world, tntLoc, 5.0f);

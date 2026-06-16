@@ -1,6 +1,7 @@
 plugins {
     java
     id("io.papermc.paperweight.userdev") version "1.7.1"
+    id("org.hidetake.ssh") version "2.11.2"
 }
 
 group = "com.astrabuild"
@@ -27,3 +28,5 @@ tasks {
         options.encoding = "UTF-8"
     }
 }
+
+apply(from = "deploy.gradle")

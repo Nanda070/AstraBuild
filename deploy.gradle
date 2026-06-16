@@ -1,0 +1,42 @@
+def localProps = new Properties()
+def propsFile = file('local.properties')
+if (propsFile.exists()) {
+    propsFile.withReader('UTF-8') { reader ->
+        localProps.load(reader)
+    }
+}
+
+remotes {
+    webServer {
+        host = localProps.getProperty('sftp.host')
+        port = localProps.getProperty('sftp.port')?.toInteger() ?: 22
+        user = localProps.getProperty('sftp.user')
+        password = localProps.getProperty('sftp.password')
+        knownHosts = allowAnyHosts
+    }
+}
+
+task deploy {
+    doLast {
+        if (!propsFile.exists()) {
+            println "local.properties not found, skipping deploy."
+            return
+        }
+
+        def sftpDir = localProps.getProperty('sftp.dir')
+        // Usually, jar output is stored here:
+        def jarFile = tasks.jar.archiveFile.get().asFile
+
+        ssh.run {
+            session(remotes.webServer) {
+                println "Uploading ${jarFile.name} to ${sftpDir}..."
+                put from: jarFile, into: sftpDir
+                println "Upload complete."
+            }
+        }
+    }
+}
+
+tasks.named("build") {
+    finalizedBy("deploy")
+}
