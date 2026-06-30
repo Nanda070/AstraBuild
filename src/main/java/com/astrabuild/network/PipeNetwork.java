@@ -41,6 +41,8 @@ public class PipeNetwork {
         BlockPos targetPos = null;
 
         while (!queue.isEmpty()) {
+            if (visited.size() > 500) break; // Hard limit for DDoS protection
+
             BlockPos current = queue.poll();
             NetworkNode node = graph.get(current);
 
@@ -83,6 +85,38 @@ public class PipeNetwork {
                 new BlockPos(pos.worldId(), pos.x(), pos.y(), pos.z() + 1),
                 new BlockPos(pos.worldId(), pos.x(), pos.y(), pos.z() - 1)
         );
+    }
+
+    public Set<Location> getConnectedNodes(Location start) {
+        BlockPos startPos = BlockPos.from(start);
+        Queue<BlockPos> queue = new LinkedList<>();
+        Set<BlockPos> visited = new HashSet<>();
+        Set<Location> connectedNodes = new HashSet<>();
+
+        if (!graph.containsKey(startPos)) return connectedNodes;
+
+        queue.add(startPos);
+        visited.add(startPos);
+
+        while (!queue.isEmpty()) {
+            if (visited.size() > 500) break; // Hard limit for DDoS protection
+
+            BlockPos current = queue.poll();
+            NetworkNode node = graph.get(current);
+
+            if (node != null && !current.equals(startPos)) {
+                connectedNodes.add(node.location());
+            }
+
+            for (BlockPos neighbor : getAdjacentPositions(current)) {
+                if (!visited.contains(neighbor) && graph.containsKey(neighbor)) {
+                    visited.add(neighbor);
+                    queue.add(neighbor);
+                }
+            }
+        }
+
+        return connectedNodes;
     }
 
     public record PathResult(List<Location> path, Location destination, long travelTimeTicks) {}

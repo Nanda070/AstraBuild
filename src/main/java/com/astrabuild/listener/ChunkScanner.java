@@ -18,11 +18,13 @@ public class ChunkScanner implements Listener {
     private final PipeNetwork network;
     private final QuarryManager quarryManager;
     private final MachineDataStorage storage;
+    private final com.astrabuild.machine.IndustrialManager industrialManager;
 
-    public ChunkScanner(PipeNetwork network, QuarryManager quarryManager, MachineDataStorage storage) {
+    public ChunkScanner(PipeNetwork network, QuarryManager quarryManager, MachineDataStorage storage, com.astrabuild.machine.IndustrialManager industrialManager) {
         this.network = network;
         this.quarryManager = quarryManager;
         this.storage = storage;
+        this.industrialManager = industrialManager;
     }
 
     @EventHandler
@@ -49,7 +51,12 @@ public class ChunkScanner implements Listener {
                 case "PIPE" -> network.registerNode(loc, NetworkNode.NodeType.PIPE);
                 case "CONNECTOR_INSERT" -> network.registerNode(loc, NetworkNode.NodeType.CONNECTOR_INSERT);
                 case "CONNECTOR_EXTRACT" -> network.registerNode(loc, NetworkNode.NodeType.CONNECTOR_EXTRACT);
-                case "SATELLITE_TERMINAL" -> network.registerNode(loc, NetworkNode.NodeType.MACHINE_SATELLITE);
+                case "SATELLITE_TERMINAL", "REACTOR_CORE", "CENTRIFUGE", "MASS_FABRICATOR", "ENERGY_STORAGE", "COOLANT_TANK" -> {
+                    if (!"SATELLITE_TERMINAL".equals(type)) {
+                        industrialManager.registerMachine(loc, type);
+                    }
+                    network.registerNode(loc, NetworkNode.NodeType.MACHINE_SATELLITE);
+                }
             }
         }
     }
@@ -65,6 +72,8 @@ public class ChunkScanner implements Listener {
             if (type != null) {
                 if (type.equals("QUARRY")) {
                     quarryManager.removeQuarry(state.getLocation());
+                } else if (!type.equals("SATELLITE_TERMINAL") && !type.equals("PIPE") && !type.startsWith("CONNECTOR_")) {
+                    industrialManager.unregisterMachine(state.getLocation());
                 }
                 network.unregisterNode(state.getLocation()); // Чистим граф от выгруженных узлов
             }

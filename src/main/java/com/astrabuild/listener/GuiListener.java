@@ -20,22 +20,22 @@ import org.bukkit.event.block.Action;
 import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 
 public class GuiListener implements Listener {
 
-    private final Plugin plugin;
+    private final com.astrabuild.AstraBuildPlugin plugin;
     private final MachineDataStorage storage;
     private final EventManager eventManager;
     private final RecipeRegistry recipeRegistry;
 
-    public GuiListener(Plugin plugin, MachineDataStorage storage, EventManager eventManager, RecipeRegistry recipeRegistry) {
+    public GuiListener(com.astrabuild.AstraBuildPlugin plugin, MachineDataStorage storage, EventManager eventManager, RecipeRegistry recipeRegistry) {
         this.plugin = plugin;
         this.storage = storage;
         this.eventManager = eventManager;
         this.recipeRegistry = recipeRegistry;
     }
 
+    @SuppressWarnings("deprecation")
     @EventHandler
     public void onInteract(PlayerInteractEvent event) {
         if (event.getAction() != Action.RIGHT_CLICK_BLOCK) return;
@@ -65,6 +65,99 @@ public class GuiListener implements Listener {
             event.setCancelled(true);
             SatelliteTerminalGui gui = new SatelliteTerminalGui(block, storage);
             gui.open(event.getPlayer());
+        } else if ("COOLANT_TANK".equals(type)) {
+            event.setCancelled(true);
+            com.astrabuild.machine.CoolantTankWorker worker = plugin.getIndustrialManager().getCoolantTanks().get(block.getLocation());
+            if (worker != null) {
+                com.astrabuild.gui.CoolantTankGui gui = new com.astrabuild.gui.CoolantTankGui(worker);
+                gui.open(event.getPlayer());
+            }
+        } else if ("REACTOR_CORE".equals(type)) {
+            if (handItem != null && handItem.hasItemMeta()) {
+                String handType = recipeRegistry.getMachineItemType(handItem);
+                if ("NANO_CHESTPLATE".equals(handType) || "NANO_SWORD".equals(handType)) {
+                    event.setCancelled(true);
+                    int blockEnergy = storage.getEnergy(block);
+                    org.bukkit.persistence.PersistentDataContainer pdc = handItem.getItemMeta().getPersistentDataContainer();
+                    org.bukkit.NamespacedKey energyKey = new org.bukkit.NamespacedKey(plugin, "astrabuild_energy");
+                    Integer itemEnergy = pdc.get(energyKey, org.bukkit.persistence.PersistentDataType.INTEGER);
+                    if (itemEnergy == null) itemEnergy = 0;
+                    
+                    int maxItemEnergy = "NANO_CHESTPLATE".equals(handType) ? 10000 : 5000;
+                    int needed = maxItemEnergy - itemEnergy;
+                    
+                    if (needed > 0 && blockEnergy > 0) {
+                        int toTransfer = Math.min(needed, blockEnergy);
+                        storage.consumeEnergy(block, toTransfer);
+                        itemEnergy += toTransfer;
+                        
+                        org.bukkit.inventory.meta.ItemMeta meta = handItem.getItemMeta();
+                        meta.getPersistentDataContainer().set(energyKey, org.bukkit.persistence.PersistentDataType.INTEGER, itemEnergy);
+                        java.util.List<String> lore = meta.getLore();
+                        if (lore != null && lore.size() >= 4) {
+                            lore.set(3, "§eЗаряд: §a" + itemEnergy + " §7/ §a" + maxItemEnergy + " EU");
+                            meta.setLore(lore);
+                        }
+                        handItem.setItemMeta(meta);
+                        
+                        event.getPlayer().playSound(event.getPlayer().getLocation(), org.bukkit.Sound.BLOCK_BEACON_AMBIENT, 1.0f, 2.0f);
+                        event.getPlayer().sendMessage("§a[+] Предмет заряжен на " + toTransfer + " EU от Реактора!");
+                        return;
+                    } else if (needed == 0) {
+                        event.getPlayer().sendMessage("§cПредмет уже полностью заряжен!");
+                        return;
+                    }
+                }
+            }
+
+            event.setCancelled(true);
+            com.astrabuild.machine.NuclearReactorCore reactor = plugin.getIndustrialManager().getReactors().get(block.getLocation());
+            if (reactor != null) {
+                com.astrabuild.gui.ReactorGui gui = new com.astrabuild.gui.ReactorGui(reactor);
+                gui.open(event.getPlayer());
+            }
+        } else if ("ENERGY_STORAGE".equals(type) || "CENTRIFUGE".equals(type) || "MASS_FABRICATOR".equals(type)) {
+            if ("ENERGY_STORAGE".equals(type) && handItem != null && handItem.hasItemMeta()) {
+                String handType = recipeRegistry.getMachineItemType(handItem);
+                if ("NANO_CHESTPLATE".equals(handType) || "NANO_SWORD".equals(handType)) {
+                    event.setCancelled(true);
+                    int blockEnergy = storage.getEnergy(block);
+                    org.bukkit.persistence.PersistentDataContainer pdc = handItem.getItemMeta().getPersistentDataContainer();
+                    org.bukkit.NamespacedKey energyKey = new org.bukkit.NamespacedKey(plugin, "astrabuild_energy");
+                    Integer itemEnergy = pdc.get(energyKey, org.bukkit.persistence.PersistentDataType.INTEGER);
+                    if (itemEnergy == null) itemEnergy = 0;
+                    
+                    int maxItemEnergy = "NANO_CHESTPLATE".equals(handType) ? 10000 : 5000;
+                    int needed = maxItemEnergy - itemEnergy;
+                    
+                    if (needed > 0 && blockEnergy > 0) {
+                        int toTransfer = Math.min(needed, blockEnergy);
+                        storage.consumeEnergy(block, toTransfer);
+                        itemEnergy += toTransfer;
+                        
+                        org.bukkit.inventory.meta.ItemMeta meta = handItem.getItemMeta();
+                        meta.getPersistentDataContainer().set(energyKey, org.bukkit.persistence.PersistentDataType.INTEGER, itemEnergy);
+                        java.util.List<String> lore = meta.getLore();
+                        if (lore != null && lore.size() >= 4) {
+                            lore.set(3, "§eЗаряд: §a" + itemEnergy + " §7/ §a" + maxItemEnergy + " EU");
+                            meta.setLore(lore);
+                        }
+                        handItem.setItemMeta(meta);
+                        
+                        event.getPlayer().playSound(event.getPlayer().getLocation(), org.bukkit.Sound.BLOCK_BEACON_AMBIENT, 1.0f, 2.0f);
+                        event.getPlayer().sendMessage("§a[+] Предмет заряжен на " + toTransfer + " EU!");
+                        return;
+                    } else if (needed == 0) {
+                        event.getPlayer().sendMessage("§cПредмет уже полностью заряжен!");
+                        return;
+                    }
+                }
+            }
+            
+            // Отправляем Action Bar сообщение с текущей энергией
+            int energy = storage.getEnergy(block);
+            int max = storage.getMaxEnergy(type);
+            event.getPlayer().spigot().sendMessage(net.md_5.bungee.api.ChatMessageType.ACTION_BAR, net.md_5.bungee.api.chat.TextComponent.fromLegacyText("§e⚡ Заряд: §a" + energy + " §7/ §a" + max + " EU"));
         }
     }
 
@@ -80,6 +173,47 @@ public class GuiListener implements Listener {
             handleAdminGuiClick(event, gui);
         } else if (event.getInventory().getHolder() instanceof RecipeViewGui gui) {
             handleRecipeViewGuiClick(event, gui);
+        } else if (event.getInventory().getHolder() instanceof com.astrabuild.gui.CoolantTankGui gui) {
+            handleCoolantTankGuiClick(event, gui);
+        } else if (event.getInventory().getHolder() instanceof com.astrabuild.gui.ReactorGui) {
+            event.setCancelled(true); // Реактор только для чтения
+        }
+    }
+
+    private void handleCoolantTankGuiClick(InventoryClickEvent event, com.astrabuild.gui.CoolantTankGui gui) {
+        event.setCancelled(true);
+        Player player = (Player) event.getWhoClicked();
+        ItemStack clickedItem = event.getCurrentItem();
+        int slot = event.getRawSlot();
+
+        if (slot >= 27 && clickedItem != null && !clickedItem.getType().isAir()) {
+            int amount = 0;
+            boolean returnBucket = false;
+
+            switch (clickedItem.getType()) {
+                case WATER_BUCKET -> {
+                    amount = 1000;
+                    returnBucket = true;
+                }
+                case ICE -> amount = 1000;
+                case PACKED_ICE -> amount = 5000;
+                case BLUE_ICE -> amount = 25000;
+                default -> {}
+            }
+
+            if (amount > 0) {
+                com.astrabuild.machine.CoolantTankWorker worker = gui.getWorker();
+                if (worker.getCoolantMb() + amount <= com.astrabuild.machine.CoolantTankWorker.MAX_COOLANT) {
+                    worker.addCoolant(amount);
+                    clickedItem.setAmount(clickedItem.getAmount() - 1);
+                    if (returnBucket) {
+                        player.getInventory().addItem(new ItemStack(Material.BUCKET));
+                    }
+                    gui.updateInfoItem();
+                } else {
+                    player.sendMessage("§cРезервуар полон!");
+                }
+            }
         }
     }
 

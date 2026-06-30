@@ -146,7 +146,7 @@ public class QuarryWorker {
             }
         }
 
-        if (block == null) {
+        if (targetLoc == null || block == null) {
             active = false;
             removeChunkTickets();
             return;
@@ -176,7 +176,7 @@ public class QuarryWorker {
             Collection<ItemStack> normalDrops = block.getDrops(fakePickaxe);
             if (hasFortune) {
                 for (ItemStack drop : normalDrops) {
-                    if (isOre(block.getType())) {
+                    if (isOre(block.getType()) && !block.hasMetadata("astrabuild_player_placed")) {
                         int multiplier = 1 + random.nextInt(3); // x1, x2, or x3
                         drop.setAmount(drop.getAmount() * multiplier);
                     }

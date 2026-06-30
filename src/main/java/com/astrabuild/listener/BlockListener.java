@@ -18,12 +18,14 @@ public class BlockListener implements Listener {
     private final QuarryManager quarryManager;
     private final MachineDataStorage storage;
     private final RecipeRegistry recipeRegistry;
+    private final com.astrabuild.machine.IndustrialManager industrialManager;
 
-    public BlockListener(PipeNetwork network, QuarryManager quarryManager, MachineDataStorage storage, RecipeRegistry recipeRegistry) {
+    public BlockListener(PipeNetwork network, QuarryManager quarryManager, MachineDataStorage storage, RecipeRegistry recipeRegistry, com.astrabuild.machine.IndustrialManager industrialManager) {
         this.network = network;
         this.quarryManager = quarryManager;
         this.storage = storage;
         this.recipeRegistry = recipeRegistry;
+        this.industrialManager = industrialManager;
     }
 
     @EventHandler
@@ -31,32 +33,33 @@ public class BlockListener implements Listener {
         ItemStack item = event.getItemInHand();
         String machineType = recipeRegistry.getMachineItemType(item);
 
+        if (event.getBlock().getType().name().endsWith("_ORE")) {
+            org.bukkit.plugin.Plugin plugin = com.astrabuild.AstraBuildPlugin.getInstance();
+            event.getBlock().setMetadata("astrabuild_player_placed", new org.bukkit.metadata.FixedMetadataValue(plugin, true));
+        }
+
         if (machineType == null) return;
 
         Location loc = event.getBlock().getLocation();
         
         // Пишем тип механизма в блок
         storage.setMachineType(event.getBlock(), machineType);
-
+        
         switch (machineType) {
             case "QUARRY" -> {
                 org.bukkit.block.Block block = event.getBlock();
                 org.bukkit.block.BlockFace face = org.bukkit.block.BlockFace.NORTH;
                 
-                // Получаем направление, куда смотрит карьер
                 if (block.getBlockData() instanceof org.bukkit.block.data.Directional dir) {
                     face = dir.getFacing();
                 }
 
-                // Считаем блок ПЕРЕД карьером
                 org.bukkit.block.Block frontBlock = block.getRelative(face);
-                
-                // Получаем чанк блока, который стоит перед карьером
                 org.bukkit.Chunk targetChunk = frontBlock.getChunk();
                 
                 int startX = targetChunk.getX() * 16;
                 int startZ = targetChunk.getZ() * 16;
-                int maxY = block.getY() - 1; // Копаем от уровня чуть ниже карьера
+                int maxY = block.getY() - 1;
                 int minY = block.getWorld().getMinHeight();
 
                 Location p1 = new Location(block.getWorld(), startX, maxY, startZ);
@@ -69,6 +72,14 @@ public class BlockListener implements Listener {
             case "PIPE" -> network.registerNode(loc, NetworkNode.NodeType.PIPE);
             case "CONNECTOR_INSERT" -> network.registerNode(loc, NetworkNode.NodeType.CONNECTOR_INSERT);
             case "SATELLITE_TERMINAL" -> network.registerNode(loc, NetworkNode.NodeType.MACHINE_SATELLITE);
+            // Новые механизмы Эпохи Атома
+            case "REACTOR_CORE", "CENTRIFUGE", "MASS_FABRICATOR", "ENERGY_STORAGE", "COOLANT_TANK" -> {
+                if (industrialManager != null) {
+                    industrialManager.registerMachine(loc, machineType);
+                }
+                // Также регистрируем их в сети труб (чтобы находить)
+                network.registerNode(loc, NetworkNode.NodeType.MACHINE_SATELLITE); // Или другой тип, пока используем этот как базовый для механизмов
+            }
         }
     }
 
@@ -81,13 +92,29 @@ public class BlockListener implements Listener {
             
             if (machineType.equals("QUARRY")) {
                 quarryManager.removeQuarry(loc);
+            } else if (machineType.equals("REACTOR_CORE") || machineType.equals("CENTRIFUGE") || 
+                       machineType.equals("MASS_FABRICATOR") || machineType.equals("ENERGY_STORAGE") ||
+                       machineType.equals("COOLANT_TANK")) {
+                if (industrialManager != null) {
+                    industrialManager.unregisterMachine(loc);
+                }
             }
             
             network.unregisterNode(loc);
             storage.clearMachineData(event.getBlock());
             
+            // Если это контейнер, вручную выбрасываем его содержимое, так как setDropItems(false) удалит и инвентарь
+            if (event.getBlock().getState() instanceof org.bukkit.block.Container container) {
+                for (ItemStack invItem : container.getInventory().getContents()) {
+                    if (invItem != null && !invItem.getType().isAir()) {
+                        loc.getWorld().dropItemNaturally(loc, invItem);
+                    }
+                }
+                container.getInventory().clear();
+            }
+
             // Кастомный дроп механизма
-            event.setDropItems(false); // Отключаем ванильный лут (выпадение обычного стекла/печи)
+            event.setDropItems(false); // Отключаем ванильный лут (выпадение обычного стекла/печи/раздатчика)
             
             ItemStack customDrop = recipeRegistry.getMachineItem(machineType);
             if (customDrop != null) {

@@ -11,7 +11,12 @@ import org.bukkit.Bukkit;
 
 import java.util.List;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
 public class DisplayUtil {
+
+    private static final Map<ItemDisplay, ItemStack> activeDisplays = new ConcurrentHashMap<>();
 
     public static void animateItemPath(Plugin plugin, ItemStack itemStack, List<Location> path, int ticksPerBlock, Runnable onComplete) {
         if (path == null || path.isEmpty()) {
@@ -29,7 +34,10 @@ public class DisplayUtil {
             ent.setBillboard(Display.Billboard.CENTER); // Поворачивается к игроку
             ent.setTeleportDuration(ticksPerBlock);     // Клиентская интерполяция
             ent.setItemDisplayTransform(ItemDisplay.ItemDisplayTransform.GROUND);
+            ent.getPersistentDataContainer().set(new org.bukkit.NamespacedKey(plugin, "astrabuild_ghost"), org.bukkit.persistence.PersistentDataType.BYTE, (byte)1);
         });
+        
+        activeDisplays.put(display, itemStack);
 
         // Асинхронно/синхронно толкаем сущность по узлам
         new BukkitRunnable() {
@@ -37,9 +45,10 @@ public class DisplayUtil {
 
             @Override
             public void run() {
-                if (index >= path.size()) {
+                if (index >= path.size() || !display.isValid()) {
+                    activeDisplays.remove(display);
                     display.remove(); // Уничтожаем сущность по прибытии
-                    if (onComplete != null) Bukkit.getScheduler().runTask(plugin, onComplete);
+                    if (onComplete != null && index >= path.size()) Bukkit.getScheduler().runTask(plugin, onComplete);
                     this.cancel();
                     return;
                 }
@@ -49,6 +58,21 @@ public class DisplayUtil {
                 index++;
             }
         }.runTaskTimer(plugin, ticksPerBlock, ticksPerBlock); // Шаг равен времени интерполяции
+    }
+
+    public static void cleanup() {
+        for (Map.Entry<ItemDisplay, ItemStack> entry : activeDisplays.entrySet()) {
+            ItemDisplay display = entry.getKey();
+            ItemStack item = entry.getValue();
+            if (display.isValid()) {
+                Location loc = display.getLocation();
+                display.remove();
+                if (loc.getWorld() != null) {
+                    loc.getWorld().dropItemNaturally(loc, item);
+                }
+            }
+        }
+        activeDisplays.clear();
     }
 
     public static void highlightBounds(Plugin plugin, Location controllerLoc, Location p1, Location p2) {

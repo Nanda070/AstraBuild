@@ -19,7 +19,7 @@ public class SatelliteTerminalGui implements InventoryHolder {
     private final Block terminalBlock;
     private final MachineDataStorage storage;
 
-    public static final int MAX_ENERGY = 100000;
+    public static final int MAX_ENERGY = 36000000; // Эквивалент 1 часа зарядки от ядерного реактора (500 EU/t * 72000 тиков)
 
     public SatelliteTerminalGui(Block terminalBlock, MachineDataStorage storage) {
         this.terminalBlock = terminalBlock;

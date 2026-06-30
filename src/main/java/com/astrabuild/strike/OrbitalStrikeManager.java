@@ -23,10 +23,10 @@ public class OrbitalStrikeManager {
         Location targetLoc = targetBlock.getLocation();
         World world = targetLoc.getWorld();
 
-        // Предупреждающая фаза (1.5 секунды)
+        // Предупреждающая фаза (10 секунд)
         new BukkitRunnable() {
             int ticks = 0;
-            final int MAX_TICKS = 30; // 1.5 секунды
+            final int MAX_TICKS = 200; // 10 секунд
 
             @Override
             public void run() {
@@ -64,12 +64,14 @@ public class OrbitalStrikeManager {
         world.playSound(center, Sound.ENTITY_GENERIC_EXPLODE, 10.0f, 0.5f);
 
         int maxRadius = switch (mode) {
-            case "NUKE" -> 15;
+            case "REACTOR_MELTDOWN" -> 50;
+            case "NUKE" -> 30;
             case "MEDIUM" -> 5;
             default -> 0; // STAB
         };
 
         double damage = switch (mode) {
+            case "REACTOR_MELTDOWN" -> 1000.0;
             case "NUKE" -> 200.0;
             case "MEDIUM" -> 100.0;
             default -> 500.0;
@@ -89,6 +91,19 @@ public class OrbitalStrikeManager {
         if (maxRadius > 0) {
             // Спавним реальные ТНТ кругами от центра
             spawnTNTCircle(world, center, maxRadius);
+            
+            // Если это ядерка (не взрыв реактора), планируем регенерацию ландшафта через 24 часа (20 тиков * 60 сек * 60 мин * 24 часа = 1728000 тиков)
+            if ("NUKE".equals(mode)) {
+                new TerrainRegenTask(plugin).scheduleNukeRegen(center, maxRadius + 10, 1728000L);
+                
+                // Загрязняем чанки радиацией
+                com.astrabuild.strike.RadiationManager rm = com.astrabuild.AstraBuildPlugin.getInstance().getRadiationManager();
+                for (int x = -maxRadius / 16 - 1; x <= maxRadius / 16 + 1; x++) {
+                    for (int z = -maxRadius / 16 - 1; z <= maxRadius / 16 + 1; z++) {
+                        rm.contaminateChunk(center.clone().add(x * 16, 0, z * 16).getChunk(), 86400000L); // 24 часа
+                    }
+                }
+            }
         }
     }
 

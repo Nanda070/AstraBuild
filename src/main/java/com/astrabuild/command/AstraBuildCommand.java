@@ -27,8 +27,8 @@ public class AstraBuildCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        if (args.length == 0) {
-            player.sendMessage("§eИспользование: /astrabuild <crafts|admin>");
+        if (args.length == 0 || args[0].equalsIgnoreCase("menu")) {
+            new com.astrabuild.gui.GuideMenuGui(recipeRegistry).open(player);
             return true;
         }
 
@@ -46,7 +46,7 @@ public class AstraBuildCommand implements CommandExecutor, TabCompleter {
             return true;
         }
 
-        player.sendMessage("§cНеизвестный аргумент. Используйте /astrabuild <crafts|admin>");
+        player.sendMessage("§cНеизвестный аргумент. Используйте /astrabuild <menu|crafts|admin>");
         return true;
     }
 
@@ -56,9 +56,8 @@ public class AstraBuildCommand implements CommandExecutor, TabCompleter {
             List<String> completions = new ArrayList<>();
             String input = args[0].toLowerCase();
             
-            for (String option : List.of("crafts", "крафты", "admin")) {
+            for (String option : List.of("menu", "crafts", "крафты", "admin")) {
                 if (option.toLowerCase().startsWith(input)) {
-                    // Показываем admin только операторам
                     if (option.equals("admin") && !sender.isOp() && !sender.hasPermission("astrabuild.admin")) {
                         continue;
                     }

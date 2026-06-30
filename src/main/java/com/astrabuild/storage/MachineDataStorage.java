@@ -86,6 +86,19 @@ public class MachineDataStorage {
         return null;
     }
 
+    public int getMaxEnergy(String type) {
+        if (type == null) return 0;
+        return switch (type) {
+            case "QUARRY" -> 10000;
+            case "CENTRIFUGE" -> 10000;
+            case "MASS_FABRICATOR" -> 1000000;
+            case "ENERGY_STORAGE" -> 10000000;
+            case "SATELLITE_TERMINAL" -> 36000000;
+            case "REACTOR_CORE" -> 100000;
+            default -> 0;
+        };
+    }
+
     public int getEnergy(Block block) {
         if (block.getState() instanceof TileState state) {
             return state.getPersistentDataContainer().getOrDefault(energyKey, PersistentDataType.INTEGER, 0);
@@ -95,17 +108,25 @@ public class MachineDataStorage {
 
     public void addEnergy(Block block, int amount) {
         if (block.getState() instanceof TileState state) {
-            int current = getEnergy(block);
-            state.getPersistentDataContainer().set(energyKey, PersistentDataType.INTEGER, current + amount);
+            PersistentDataContainer pdc = state.getPersistentDataContainer();
+            int current = pdc.getOrDefault(energyKey, PersistentDataType.INTEGER, 0);
+            String type = pdc.get(machineTypeKey, PersistentDataType.STRING);
+            int max = getMaxEnergy(type);
+            
+            int newAmount = current + amount;
+            if (newAmount > max) newAmount = max;
+            
+            pdc.set(energyKey, PersistentDataType.INTEGER, newAmount);
             state.update();
         }
     }
 
     public boolean consumeEnergy(Block block, int amount) {
         if (block.getState() instanceof TileState state) {
-            int current = getEnergy(block);
+            PersistentDataContainer pdc = state.getPersistentDataContainer();
+            int current = pdc.getOrDefault(energyKey, PersistentDataType.INTEGER, 0);
             if (current >= amount) {
-                state.getPersistentDataContainer().set(energyKey, PersistentDataType.INTEGER, current - amount);
+                pdc.set(energyKey, PersistentDataType.INTEGER, current - amount);
                 state.update();
                 return true;
             }
