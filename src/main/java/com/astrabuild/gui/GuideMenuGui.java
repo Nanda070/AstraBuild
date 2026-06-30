@@ -12,8 +12,10 @@ import org.bukkit.inventory.meta.ItemMeta;
 
 import java.util.List;
 
+import org.bukkit.inventory.InventoryHolder;
+
 @SuppressWarnings("deprecation")
-public class GuideMenuGui {
+public class GuideMenuGui implements InventoryHolder {
 
     private final RecipeRegistry recipeRegistry;
 
@@ -21,8 +23,10 @@ public class GuideMenuGui {
         this.recipeRegistry = recipeRegistry;
     }
 
+    private Inventory inventory;
+
     public void open(Player player) {
-        Inventory inv = Bukkit.createInventory(null, 27, "§8AstraBuild: Руководство");
+        this.inventory = Bukkit.createInventory(this, 27, "§8AstraBuild: Руководство");
 
         // Книга с гайдом
         ItemStack guideBook = new ItemStack(Material.WRITTEN_BOOK);
@@ -38,7 +42,7 @@ public class GuideMenuGui {
                 "§lРадиация§r\n\nВзрыв реактора загрязняет чанки на 24 часа. Нахождение в них вызывает иссушение, голод и слабость.\n\nСкрафтите и наденьте полный сет Костюма Химзащиты (Hazmat Suit), чтобы выжить!"
         );
         guideBook.setItemMeta(bookMeta);
-        inv.setItem(11, guideBook);
+        this.inventory.setItem(11, guideBook);
 
         // Кнопка перехода к крафтам
         ItemStack craftsBtn = new ItemStack(Material.CRAFTING_TABLE);
@@ -46,19 +50,14 @@ public class GuideMenuGui {
         craftsMeta.setDisplayName("§aМеню крафтов");
         craftsMeta.setLore(List.of("§7Нажмите, чтобы открыть", "§7меню создания предметов."));
         craftsBtn.setItemMeta(craftsMeta);
-        inv.setItem(15, craftsBtn);
+        this.inventory.setItem(15, craftsBtn);
 
-        // Кнопка перехода к инструментам админа (если оп)
-        if (player.isOp() || player.hasPermission("astrabuild.admin")) {
-            ItemStack adminBtn = new ItemStack(Material.COMMAND_BLOCK);
-            ItemMeta adminMeta = adminBtn.getItemMeta();
-            adminMeta.setDisplayName("§cМеню Админа");
-            adminMeta.setLore(List.of("§7Выдать себе любые механизмы."));
-            adminBtn.setItemMeta(adminMeta);
-            inv.setItem(26, adminBtn);
-        }
+        player.openInventory(this.inventory);
+    }
 
-        player.openInventory(inv);
+    @Override
+    public Inventory getInventory() {
+        return this.inventory;
     }
 
     public void handleClick(InventoryClickEvent event, Player player) {
@@ -68,8 +67,6 @@ public class GuideMenuGui {
 
         if (clicked.getType() == Material.CRAFTING_TABLE) {
             new CraftsGui(recipeRegistry).open(player);
-        } else if (clicked.getType() == Material.COMMAND_BLOCK) {
-            new AdminGui(recipeRegistry).open(player);
         } else if (clicked.getType() == Material.WRITTEN_BOOK) {
             player.sendMessage("§a[AstraBuild] §fВозьмите эту книгу, чтобы читать гайд в пути!");
             player.getInventory().addItem(clicked.clone());

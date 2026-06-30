@@ -177,6 +177,8 @@ public class GuiListener implements Listener {
             handleCoolantTankGuiClick(event, gui);
         } else if (event.getInventory().getHolder() instanceof com.astrabuild.gui.ReactorGui) {
             event.setCancelled(true); // Реактор только для чтения
+        } else if (event.getInventory().getHolder() instanceof com.astrabuild.gui.GuideMenuGui gui) {
+            gui.handleClick(event, (org.bukkit.entity.Player) event.getWhoClicked());
         }
     }
 
