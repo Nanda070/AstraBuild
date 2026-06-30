@@ -4,87 +4,48 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Build & Deploy
 
-```bash
+`ash
 # Windows
 gradlew.bat build
 
 # Unix
 ./gradlew build
-```
+`
 
-`build` compiles the plugin and, if `local.properties` is present, automatically SFTPs the JAR to the configured server via `deploy.gradle`. Output: `build/libs/AstraBuild-1.0.0-SNAPSHOT-dev.jar`.
+uild compiles the plugin and automatically SFTPs the JAR to the configured server via deploy.gradle if local.properties is present.
 
-First-time NMS setup (Paperweight mojmap):
-```bash
-./gradlew setupLocalDebugServer
-```
-
-`local.properties` (gitignored) must contain SFTP credentials for deployment:
-```
-sftp.host=...
-sftp.port=...
-sftp.user=...
-sftp.password=...
-sftp.dir=...
-```
-
-There are no automated tests.
+**CRITICAL ENCODING RULE:** The codebase contains extensive Cyrillic (Russian) UI strings. The Java compiler must treat all files as UTF-8. uild.gradle.kts enforces this via 	asks.withType<JavaCompile> { options.encoding = "UTF-8" }. When editing GUI text, **NEVER** use tools or scripts that write files with ANSI/Windows-1251 encoding. 
 
 ## Architecture
 
-AstraBuild is a **PaperMC 1.21 plugin** (Java 21, Paperweight userdev) that adds industrial machines, energy networks, logistics pipes, quarrying, orbital strikes, and nano equipment to the Astra SMP network. It hard-depends on the `AstraSMP` plugin (declared in `plugin.yml`).
+AstraBuild is a **PaperMC 1.21 plugin** (Java 21, Paperweight userdev). It adds industrial machines, energy networks, logistics pipes, quarrying, orbital strikes, and nano equipment.
 
-### Plugin Initialization Order (`AstraBuildPlugin.java`)
+### Key Components
 
-Subsystems initialize in strict dependency order on `onEnable()`:
-
-1. `MachineDataStorage` — PDC wrapper; must come first (all other systems read/write through it)
-2. `DeliveryService` + `PipeNetwork` — logistics layer
-3. `EventManager` — global timed events that apply fuel-value multipliers; persists state in `config.yml`
-4. `IndustrialManager` — tick orchestrator for Reactor, Centrifuge, Mass Fabricator, Energy Storage, Coolant Tank
-5. `QuarryManager`, `RecipeRegistry`, `RadiationManager`, `HologramManager`
-6. Listeners: `BlockListener`, `ChunkScanner`, `GuiListener`, `OrbitalStrikeListener`, `NanoEquipmentListener`
-
-### Machine Lifecycle
-
-**Place:** `BlockListener` detects a custom machine item → writes machine type via `MachineDataStorage.setMachineType()` (PersistentDataContainer on the TileState) → registers the location as a node in `PipeNetwork` → creates a Worker instance in `IndustrialManager`.
-
-**Tick:** `IndustrialManager` runs a single BukkitTask every server tick. Each registered worker's `runTick()` reads/writes energy from the block's PDC (`machine_energy` INTEGER key), consumes inputs, produces outputs, and updates its floating hologram.
-
-**Break:** `BlockListener` stops the worker, deregisters from `PipeNetwork`, clears PDC keys, removes the hologram entity, and drops the custom item.
-
-**Restart persistence:** `ChunkScanner` re-registers machines on chunk load by scanning loaded blocks for the `machine_type` PDC key. Quarry bounds are also persisted to `quarries.yml` via `QuarryManager`.
+- **MachineDataStorage:** Wraps PersistentDataContainer (PDC). All machine states (energy, coolant, type, bounds) live in PDC on the block's TileState.
+- **IndustrialManager:** Orchestrates single-threaded bukkit tasks for Reactor, Centrifuge, Mass Fabricator, Energy Storage, Coolant Tank.
+- **Holograms:** TextDisplay entities tagged with strabuild_holo. Cleaned up and updated dynamically by HologramManager.
 
 ### Energy System
 
-Energy (EU) is stored as an INTEGER in each block's PDC. Machine capacities:
-
-| Machine | Capacity |
-|---|---|
-| Quarry / Centrifuge | 10,000 EU |
-| Mass Fabricator | 1,000,000 EU |
-| Reactor | 100,000 EU |
-| Energy Storage | 10,000,000 EU |
-| Satellite Terminal | 36,000,000 EU |
-
-`EnergyStorageWorker` and `NuclearReactorCore` distribute energy every 20 ticks to all reachable machines found via `PipeNetwork.getConnectedNodes()` (flood-fill BFS). Reactors and other batteries are excluded from receiving energy to prevent feedback loops.
-
-The Reactor also manages a heat system (0–10,000): it gains heat per tick and cools via nearby water/ice blocks and `CoolantTankWorker`. At 10,000 heat it triggers a meltdown (destroys core, 24-hour chunk radiation via `RadiationManager`).
+Energy (EU) is stored as an INTEGER in each block's PDC.
+Charging happens in EnergyStorageWorker, which also charges items inside its GUI (Slot 0 for internal transfer, visual in Slot 11). Rate is typically 50 EU/tick for items to allow smooth visual updates.
 
 ### Pipe Network & Item Logistics
 
-`PipeNetwork` maintains a `BlockPos → NetworkNode` graph where nodes are PIPE, CONNECTOR_INSERT, or machine locations. Item routing uses BFS capped at 500 visited nodes. `DeliveryService` walks the resolved path and delivers to the container facing the target `CONNECTOR_INSERT` (Dropper orientation determines direction). Fallback: connector inventory → world drop.
+PipeNetwork maintains a BlockPos -> NetworkNode graph. Nodes have specific types (NetworkNode.NodeType):
+- PIPE_ENERGY (Yellow Stained Glass Pane): Translates energy.
+- PIPE_ITEM (Light Blue Stained Glass Pane): Translates items from Quarry to Connectors.
+- CONNECTOR_INSERT, CONNECTOR_EXTRACT: Link pipes to external containers (e.g. Chests).
+- MACHINE_QUARRY, MACHINE_SATELLITE: Machine nodes that connect to networks.
 
-Animated item-in-transit visuals are handled by `DisplayUtil` (spawns an `ItemDisplay` entity that teleports per tick, interpolated on the client side).
+getConnectedNodes() and indShortestPath() accept an allowed NetworkNode.NodeType to restrict pathfinding (e.g., energy packets cannot travel through item pipes).
+
+### Radiation System
+
+- RadiationManager sets radiation per chunk using a LONG timestamp key chunk_radiation_end_time in the chunk's PDC.
+- **Radiation Cleaner:** A Beacon block that, when placed, instantly cleans radiation within a 100-block radius (cleanArea()) and destroys itself, playing an explosion sound/particle.
 
 ### GUI System
 
-Right-clicking a machine opens an inventory-based GUI. `GuiListener` reads the machine type from storage and delegates to the appropriate `*Gui` class (`gui/` package). Inventory changes are synchronized back to the block's PDC on the next tick via `scheduleGuiSync()` to avoid same-tick race conditions with the worker ticker.
-
-### Key Design Notes
-
-- **All machine state lives in PDC** — no external database. Machine type, energy, upgrades (Fortune/Silk Touch/Overclocker), and quarry bounds are all stored as PersistentDataContainer keys on the block entity (TileState).
-- **`IndustrialManager` uses `ConcurrentHashMap`** for its worker maps to avoid `ConcurrentModificationException` during single-threaded tick iteration.
-- **`PipeNetwork` BFS has a hard 500-node cap** as DDoS protection against pathologically large networks.
-- **Fortune and Silk Touch upgrades are mutually exclusive** (enforced in `MachineDataStorage`); Overclocker stacks with either.
-- **Holograms** are `TextDisplay` entities tagged with `astrabuild_holo` PDC key; `HologramManager` cleans up abandoned duplicates within a 2-block radius on each update.
+Inventory changes are synchronized back to the block's PDC on the next tick via scheduleGuiSync() to avoid same-tick race conditions with the worker ticker. Strings for GUIs must be valid UTF-8.
