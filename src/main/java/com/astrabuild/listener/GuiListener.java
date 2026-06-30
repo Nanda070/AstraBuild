@@ -116,48 +116,22 @@ public class GuiListener implements Listener {
                 com.astrabuild.gui.ReactorGui gui = new com.astrabuild.gui.ReactorGui(reactor);
                 gui.open(event.getPlayer());
             }
-        } else if ("ENERGY_STORAGE".equals(type) || "CENTRIFUGE".equals(type) || "MASS_FABRICATOR".equals(type)) {
-            if ("ENERGY_STORAGE".equals(type) && handItem != null && handItem.hasItemMeta()) {
-                String handType = recipeRegistry.getMachineItemType(handItem);
-                if ("NANO_CHESTPLATE".equals(handType) || "NANO_SWORD".equals(handType)) {
-                    event.setCancelled(true);
-                    int blockEnergy = storage.getEnergy(block);
-                    org.bukkit.persistence.PersistentDataContainer pdc = handItem.getItemMeta().getPersistentDataContainer();
-                    org.bukkit.NamespacedKey energyKey = new org.bukkit.NamespacedKey(plugin, "astrabuild_energy");
-                    Integer itemEnergy = pdc.get(energyKey, org.bukkit.persistence.PersistentDataType.INTEGER);
-                    if (itemEnergy == null) itemEnergy = 0;
-                    
-                    int maxItemEnergy = "NANO_CHESTPLATE".equals(handType) ? 10000 : 5000;
-                    int needed = maxItemEnergy - itemEnergy;
-                    
-                    if (needed > 0 && blockEnergy > 0) {
-                        int toTransfer = Math.min(needed, blockEnergy);
-                        storage.consumeEnergy(block, toTransfer);
-                        itemEnergy += toTransfer;
-                        
-                        org.bukkit.inventory.meta.ItemMeta meta = handItem.getItemMeta();
-                        meta.getPersistentDataContainer().set(energyKey, org.bukkit.persistence.PersistentDataType.INTEGER, itemEnergy);
-                        java.util.List<String> lore = meta.getLore();
-                        if (lore != null && lore.size() >= 4) {
-                            lore.set(3, "§eЗаряд: §a" + itemEnergy + " §7/ §a" + maxItemEnergy + " EU");
-                            meta.setLore(lore);
-                        }
-                        handItem.setItemMeta(meta);
-                        
-                        event.getPlayer().playSound(event.getPlayer().getLocation(), org.bukkit.Sound.BLOCK_BEACON_AMBIENT, 1.0f, 2.0f);
-                        event.getPlayer().sendMessage("§a[+] Предмет заряжен на " + toTransfer + " EU!");
-                        return;
-                    } else if (needed == 0) {
-                        event.getPlayer().sendMessage("§cПредмет уже полностью заряжен!");
-                        return;
-                    }
-                }
-            }
-            
-            // Отправляем Action Bar сообщение с текущей энергией
-            int energy = storage.getEnergy(block);
-            int max = storage.getMaxEnergy(type);
-            event.getPlayer().spigot().sendMessage(net.md_5.bungee.api.ChatMessageType.ACTION_BAR, net.md_5.bungee.api.chat.TextComponent.fromLegacyText("§e⚡ Заряд: §a" + energy + " §7/ §a" + max + " EU"));
+        } else if ("ENERGY_STORAGE".equals(type)) {
+            event.setCancelled(true);
+            com.astrabuild.gui.EnergyStorageGui gui = new com.astrabuild.gui.EnergyStorageGui(block, storage, plugin);
+            event.getPlayer().openInventory(gui.getInventory());
+        } else if ("CENTRIFUGE".equals(type)) {
+            event.setCancelled(true);
+            com.astrabuild.gui.CentrifugeGui gui = new com.astrabuild.gui.CentrifugeGui(block, storage, plugin);
+            event.getPlayer().openInventory(gui.getInventory());
+        } else if ("MASS_FABRICATOR".equals(type)) {
+            event.setCancelled(true);
+            com.astrabuild.gui.MassFabricatorGui gui = new com.astrabuild.gui.MassFabricatorGui(block, storage, plugin);
+            event.getPlayer().openInventory(gui.getInventory());
+        } else if ("CONNECTOR_INSERT".equals(type)) {
+            event.setCancelled(true);
+            com.astrabuild.gui.ConnectorInsertGui gui = new com.astrabuild.gui.ConnectorInsertGui(block, plugin);
+            event.getPlayer().openInventory(gui.getInventory());
         }
     }
 
@@ -177,6 +151,14 @@ public class GuiListener implements Listener {
             handleCoolantTankGuiClick(event, gui);
         } else if (event.getInventory().getHolder() instanceof com.astrabuild.gui.ReactorGui) {
             event.setCancelled(true); // Реактор только для чтения
+        } else if (event.getInventory().getHolder() instanceof com.astrabuild.gui.CentrifugeGui gui) {
+            handleCentrifugeGuiClick(event, gui);
+        } else if (event.getInventory().getHolder() instanceof com.astrabuild.gui.MassFabricatorGui gui) {
+            handleMassFabricatorGuiClick(event, gui);
+        } else if (event.getInventory().getHolder() instanceof com.astrabuild.gui.EnergyStorageGui gui) {
+            handleEnergyStorageGuiClick(event, gui);
+        } else if (event.getInventory().getHolder() instanceof com.astrabuild.gui.ConnectorInsertGui gui) {
+            handleConnectorInsertGuiClick(event, gui);
         } else if (event.getInventory().getHolder() instanceof com.astrabuild.gui.GuideMenuGui gui) {
             gui.handleClick(event, (org.bukkit.entity.Player) event.getWhoClicked());
         }
@@ -222,8 +204,8 @@ public class GuiListener implements Listener {
     private void handleQuarryGuiClick(InventoryClickEvent event, QuarryGui gui) {
         event.setCancelled(true);
 
-        Player player = (Player) event.getWhoClicked();
-        ItemStack clickedItem = event.getCurrentItem();
+        org.bukkit.entity.Player player = (org.bukkit.entity.Player) event.getWhoClicked();
+        org.bukkit.inventory.ItemStack clickedItem = event.getCurrentItem();
         int slot = event.getRawSlot();
 
         if (slot >= 27 && clickedItem != null && !clickedItem.getType().isAir()) {
@@ -340,5 +322,56 @@ public class GuiListener implements Listener {
         }
 
         return baseValue;
+    }
+    private void handleCentrifugeGuiClick(org.bukkit.event.inventory.InventoryClickEvent event, com.astrabuild.gui.CentrifugeGui gui) {
+        if (event.isShiftClick()) {
+            event.setCancelled(true);
+            return;
+        }
+        int slot = event.getRawSlot();
+        if (slot < 27 && slot != 10 && slot != 15 && slot != 16) {
+            event.setCancelled(true);
+        }
+        scheduleGuiSync(() -> gui.syncToBlock());
+    }
+
+    private void handleMassFabricatorGuiClick(org.bukkit.event.inventory.InventoryClickEvent event, com.astrabuild.gui.MassFabricatorGui gui) {
+        if (event.isShiftClick()) {
+            event.setCancelled(true);
+            return;
+        }
+        int slot = event.getRawSlot();
+        if (slot < 27 && slot != 11 && slot != 15) {
+            event.setCancelled(true);
+        }
+        scheduleGuiSync(() -> gui.syncToBlock());
+    }
+
+    private void handleEnergyStorageGuiClick(org.bukkit.event.inventory.InventoryClickEvent event, com.astrabuild.gui.EnergyStorageGui gui) {
+        if (event.isShiftClick()) {
+            event.setCancelled(true);
+            return;
+        }
+        int slot = event.getRawSlot();
+        if (slot < 27 && slot != 11) {
+            event.setCancelled(true);
+        }
+        scheduleGuiSync(() -> gui.syncToBlock());
+    }
+
+    private void handleConnectorInsertGuiClick(org.bukkit.event.inventory.InventoryClickEvent event, com.astrabuild.gui.ConnectorInsertGui gui) {
+        if (event.isShiftClick()) {
+            event.setCancelled(true);
+            return;
+        }
+        int slot = event.getRawSlot();
+        if (slot < 27 && !(slot >= 3 && slot <= 5 || slot >= 12 && slot <= 14 || slot >= 21 && slot <= 23)) {
+            event.setCancelled(true);
+        }
+        scheduleGuiSync(() -> gui.syncToBlock());
+    }
+
+    private void scheduleGuiSync(Runnable syncTask) {
+        org.bukkit.Bukkit.getScheduler().runTaskLater(plugin, syncTask, 1L);
     }
 }

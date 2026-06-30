@@ -48,7 +48,8 @@ public class ChunkScanner implements Listener {
                     }
                     network.registerNode(loc, NetworkNode.NodeType.MACHINE_QUARRY);
                 }
-                case "PIPE" -> network.registerNode(loc, NetworkNode.NodeType.PIPE);
+                case "ENERGY_PIPE" -> network.registerNode(loc, NetworkNode.NodeType.PIPE_ENERGY);
+                case "ITEM_PIPE" -> network.registerNode(loc, NetworkNode.NodeType.PIPE_ITEM);
                 case "CONNECTOR_INSERT" -> network.registerNode(loc, NetworkNode.NodeType.CONNECTOR_INSERT);
                 case "CONNECTOR_EXTRACT" -> network.registerNode(loc, NetworkNode.NodeType.CONNECTOR_EXTRACT);
                 case "SATELLITE_TERMINAL", "REACTOR_CORE", "CENTRIFUGE", "MASS_FABRICATOR", "ENERGY_STORAGE", "COOLANT_TANK" -> {
@@ -59,6 +60,8 @@ public class ChunkScanner implements Listener {
                 }
             }
         }
+
+        com.astrabuild.AstraBuildPlugin.getInstance().getHologramManager().cleanupOrphansInChunk(chunk, storage);
     }
 
     @EventHandler

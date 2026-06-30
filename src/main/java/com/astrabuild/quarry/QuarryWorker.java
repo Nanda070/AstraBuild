@@ -207,7 +207,7 @@ public class QuarryWorker {
     }
 
     private void pushToNetwork(Collection<ItemStack> items) {
-        PipeNetwork.PathResult pathResult = network.findShortestPath(controllerLoc);
+        PipeNetwork.PathResult pathResult = network.findShortestPath(controllerLoc, com.astrabuild.model.NetworkNode.NodeType.PIPE_ITEM);
         
         if (pathResult == null || pathResult.path().isEmpty()) {
             Location dropLoc = controllerLoc.clone().add(0, 1, 0);
@@ -230,4 +230,4 @@ public class QuarryWorker {
         this.active = false;
         removeChunkTickets();
     }
-}
+}

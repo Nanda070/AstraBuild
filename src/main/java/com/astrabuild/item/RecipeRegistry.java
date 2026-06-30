@@ -24,7 +24,9 @@ public class RecipeRegistry {
 
     public void registerAll() {
         registerQuarry();
-        registerPipe();
+        registerEnergyPipe();
+        registerItemPipe();
+        registerRadiationCleaner();
         registerConnector();
         registerUpgradeFortune();
         registerUpgradeSilkTouch();
@@ -56,7 +58,9 @@ public class RecipeRegistry {
     public ItemStack getMachineItem(String type) {
         ItemStack item = switch (type) {
             case "QUARRY" -> createQuarryItem();
-            case "PIPE" -> createPipeItem();
+            case "ENERGY_PIPE" -> createEnergyPipeItem();
+            case "ITEM_PIPE" -> createItemPipeItem();
+            case "RADIATION_CLEANER" -> createRadiationCleanerItem();
             case "CONNECTOR_INSERT" -> createConnectorItem();
             case "UPGRADE_FORTUNE" -> createUpgradeFortune();
             case "UPGRADE_SILK_TOUCH" -> createUpgradeSilkTouch();
@@ -66,8 +70,8 @@ public class RecipeRegistry {
             case "COOLANT_TANK" -> createSimpleMachineItem("COOLANT_TANK", Material.CAULDRON, "§bРезервуар Охладителя", "Хранит и поставляет воду реактору.");
             case "REACTOR_CORE" -> createSimpleMachineItem("REACTOR_CORE", Material.FURNACE, "§cКонтроллер Ядерного Реактора", "Сердце атомной станции.");
             case "CENTRIFUGE" -> createSimpleMachineItem("CENTRIFUGE", Material.DISPENSER, "§eЦентрифуга", "Обогащает уран.");
-            case "MASS_FABRICATOR" -> createSimpleMachineItem("MASS_FABRICATOR", Material.DROPPER, "§dГенератор Материи", "Создает ценные ресурсы из мусора и энергии.");
-            case "ENERGY_STORAGE" -> createSimpleMachineItem("ENERGY_STORAGE", Material.REDSTONE_BLOCK, "§aЭнергохранилище (МФСУ)", "Хранит до 10 000 000 EU.");
+            case "MASS_FABRICATOR" -> createSimpleMachineItem("MASS_FABRICATOR", Material.DROPPER, "§dГенератор Материи", "Создает алмазы из мусора и энергии.");
+            case "ENERGY_STORAGE" -> createSimpleMachineItem("ENERGY_STORAGE", Material.BLAST_FURNACE, "§aМФСУ", "Хранит до 10 000 000 EU.");
             case "NANO_CHESTPLATE" -> createNanoChestplate();
             case "NANO_SWORD" -> createNanoSword();
             default -> null;
@@ -87,22 +91,26 @@ public class RecipeRegistry {
     private ItemStack createNanoChestplate() {
         ItemStack item = new ItemStack(Material.NETHERITE_CHESTPLATE);
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName("§bЭлектрический Джетпак");
-        meta.setLore(List.of("§7Позволяет летать.", "§7Тратит энергию при полете.", "", "§eЗаряд: §a0 §7/ §a10000 EU"));
-        meta.getPersistentDataContainer().set(machineItemKey, PersistentDataType.STRING, "NANO_CHESTPLATE");
-        meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "astrabuild_energy"), PersistentDataType.INTEGER, 0);
-        item.setItemMeta(meta);
+        if (meta != null) {
+            meta.setDisplayName("§bНано-Джетпак");
+            meta.setLore(List.of("§7Позволяет летать.", "§7Тратит энергию при полете.", "", "§eЭнергия: §a0 §7/ §a10000 EU"));
+            meta.getPersistentDataContainer().set(machineItemKey, PersistentDataType.STRING, "NANO_CHESTPLATE");
+            meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "astrabuild_energy"), PersistentDataType.INTEGER, 0);
+            item.setItemMeta(meta);
+        }
         return item;
     }
 
     private ItemStack createNanoSword() {
         ItemStack item = new ItemStack(Material.NETHERITE_SWORD);
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName("§cНано-Сабля");
-        meta.setLore(List.of("§7Огромный урон при наличии заряда.", "§7Бьет как палка без энергии.", "", "§eЗаряд: §a0 §7/ §a5000 EU"));
-        meta.getPersistentDataContainer().set(machineItemKey, PersistentDataType.STRING, "NANO_SWORD");
-        meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "astrabuild_energy"), PersistentDataType.INTEGER, 0);
-        item.setItemMeta(meta);
+        if (meta != null) {
+            meta.setDisplayName("§bНано-Меч");
+            meta.setLore(List.of("§7Убийственное оружие.", "§7Тратит энергию при ударе.", "", "§eЭнергия: §a0 §7/ §a5000 EU"));
+            meta.getPersistentDataContainer().set(machineItemKey, PersistentDataType.STRING, "NANO_SWORD");
+            meta.getPersistentDataContainer().set(new NamespacedKey(plugin, "astrabuild_energy"), PersistentDataType.INTEGER, 0);
+            item.setItemMeta(meta);
+        }
         return item;
     }
 
@@ -126,12 +134,32 @@ public class RecipeRegistry {
         return item;
     }
 
-    private ItemStack createPipeItem() {
-        // Синяя стеклянная панель идеально симулирует трубу
-        ItemStack item = new ItemStack(Material.CYAN_STAINED_GLASS_PANE);
+    private ItemStack createEnergyPipeItem() {
+        ItemStack item = new ItemStack(Material.YELLOW_STAINED_GLASS_PANE);
+        org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName("§eЭнергетическая труба");
+        meta.setLore(List.of("§7Проводит энергию EU."));
+        meta.getPersistentDataContainer().set(machineItemKey, org.bukkit.persistence.PersistentDataType.STRING, "ENERGY_PIPE");
+        item.setItemMeta(meta);
+        return item;
+    }
+
+    private ItemStack createItemPipeItem() {
+        ItemStack item = new ItemStack(Material.LIGHT_BLUE_STAINED_GLASS_PANE);
         org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
         meta.setDisplayName("§bЛогистическая труба");
-        meta.getPersistentDataContainer().set(machineItemKey, org.bukkit.persistence.PersistentDataType.STRING, "PIPE");
+        meta.setLore(List.of("§7Перемещает предметы."));
+        meta.getPersistentDataContainer().set(machineItemKey, org.bukkit.persistence.PersistentDataType.STRING, "ITEM_PIPE");
+        item.setItemMeta(meta);
+        return item;
+    }
+    
+    private ItemStack createRadiationCleanerItem() {
+        ItemStack item = new ItemStack(Material.BEACON);
+        org.bukkit.inventory.meta.ItemMeta meta = item.getItemMeta();
+        meta.setDisplayName("§dОчиститель Радиации");
+        meta.setLore(List.of("§7Очищает радиацию в радиусе 100 блоков.", "§cОдноразовый!"));
+        meta.getPersistentDataContainer().set(machineItemKey, org.bukkit.persistence.PersistentDataType.STRING, "RADIATION_CLEANER");
         item.setItemMeta(meta);
         return item;
     }
@@ -208,16 +236,40 @@ public class RecipeRegistry {
         Bukkit.addRecipe(recipe);
     }
 
-    private void registerPipe() {
-        ItemStack pipe = getMachineItem("PIPE");
-        NamespacedKey key = new NamespacedKey(plugin, "astrabuild_pipe");
+    private void registerEnergyPipe() {
+        ItemStack pipe = getMachineItem("ENERGY_PIPE");
+        NamespacedKey key = new NamespacedKey(plugin, "astrabuild_energy_pipe");
         ShapedRecipe recipe = new ShapedRecipe(key, pipe);
         recipe.shape("GGG", "RDR", "GGG");
         recipe.setIngredient('G', Material.GLASS);
         recipe.setIngredient('R', Material.REDSTONE);
-        recipe.setIngredient('D', Material.DIAMOND);
+        recipe.setIngredient('D', Material.GOLD_INGOT);
         Bukkit.addRecipe(recipe);
     }
+    
+    private void registerItemPipe() {
+        ItemStack pipe = getMachineItem("ITEM_PIPE");
+        NamespacedKey key = new NamespacedKey(plugin, "astrabuild_item_pipe");
+        ShapedRecipe recipe = new ShapedRecipe(key, pipe);
+        recipe.shape("GGG", "RDR", "GGG");
+        recipe.setIngredient('G', Material.GLASS);
+        recipe.setIngredient('R', Material.REDSTONE);
+        recipe.setIngredient('D', Material.LAPIS_LAZULI);
+        Bukkit.addRecipe(recipe);
+    }
+    
+    private void registerRadiationCleaner() {
+        ItemStack item = getMachineItem("RADIATION_CLEANER");
+        NamespacedKey key = new NamespacedKey(plugin, "astrabuild_radiation_cleaner");
+        ShapedRecipe recipe = new ShapedRecipe(key, item);
+        recipe.shape(" R ", "IDI", " R ");
+        recipe.setIngredient('R', Material.REDSTONE);
+        recipe.setIngredient('D', Material.DIAMOND_BLOCK);
+        recipe.setIngredient('I', Material.IRON_BLOCK);
+        Bukkit.addRecipe(recipe);
+    }
+
+
 
     private void registerConnector() {
         ItemStack connector = getMachineItem("CONNECTOR_INSERT");
@@ -368,4 +420,4 @@ public class RecipeRegistry {
         }
         Bukkit.addRecipe(recipe);
     }
-}
+}

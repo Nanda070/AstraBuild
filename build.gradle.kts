@@ -21,6 +21,10 @@ dependencies {
     // compileOnly(project(":AstraSMP")) // Раскомментировать при настройке монорепозитория
 }
 
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+}
+
 tasks {
     compileJava {
         options.encoding = "UTF-8"

@@ -8,7 +8,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public class PipeNetwork {
 
-    // Изолируем координаты от мусора Bukkit Location
     private record BlockPos(UUID worldId, int x, int y, int z) {
         static BlockPos from(Location loc) {
             return new BlockPos(loc.getWorld().getUID(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
@@ -29,7 +28,7 @@ public class PipeNetwork {
         return graph.get(BlockPos.from(loc));
     }
 
-    public PathResult findShortestPath(Location start) {
+    public PathResult findShortestPath(Location start, NetworkNode.NodeType pipeType) {
         BlockPos startPos = BlockPos.from(start);
         Queue<BlockPos> queue = new LinkedList<>();
         Map<BlockPos, BlockPos> cameFrom = new HashMap<>();
@@ -46,7 +45,6 @@ public class PipeNetwork {
             BlockPos current = queue.poll();
             NetworkNode node = graph.get(current);
 
-            // Ищем коннектор
             if (node != null && node.type() == NetworkNode.NodeType.CONNECTOR_INSERT && !current.equals(startPos)) {
                 targetPos = current;
                 break;
@@ -54,9 +52,12 @@ public class PipeNetwork {
 
             for (BlockPos neighbor : getAdjacentPositions(current)) {
                 if (!visited.contains(neighbor) && graph.containsKey(neighbor)) {
-                    visited.add(neighbor);
-                    cameFrom.put(neighbor, current);
-                    queue.add(neighbor);
+                    NetworkNode neighborNode = graph.get(neighbor);
+                    if (neighborNode != null && (neighborNode.type() == pipeType || neighborNode.type() == NetworkNode.NodeType.CONNECTOR_INSERT || neighborNode.type() == NetworkNode.NodeType.MACHINE_SATELLITE)) {
+                        visited.add(neighbor);
+                        cameFrom.put(neighbor, current);
+                        queue.add(neighbor);
+                    }
                 }
             }
         }
@@ -87,7 +88,7 @@ public class PipeNetwork {
         );
     }
 
-    public Set<Location> getConnectedNodes(Location start) {
+    public Set<Location> getConnectedNodes(Location start, NetworkNode.NodeType pipeType) {
         BlockPos startPos = BlockPos.from(start);
         Queue<BlockPos> queue = new LinkedList<>();
         Set<BlockPos> visited = new HashSet<>();
@@ -110,8 +111,11 @@ public class PipeNetwork {
 
             for (BlockPos neighbor : getAdjacentPositions(current)) {
                 if (!visited.contains(neighbor) && graph.containsKey(neighbor)) {
-                    visited.add(neighbor);
-                    queue.add(neighbor);
+                    NetworkNode neighborNode = graph.get(neighbor);
+                    if (neighborNode != null && (neighborNode.type() == pipeType || neighborNode.type() == NetworkNode.NodeType.MACHINE_SATELLITE || neighborNode.type() == NetworkNode.NodeType.MACHINE_QUARRY)) {
+                        visited.add(neighbor);
+                        queue.add(neighbor);
+                    }
                 }
             }
         }

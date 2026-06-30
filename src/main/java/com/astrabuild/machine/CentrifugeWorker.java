@@ -42,38 +42,48 @@ public class CentrifugeWorker {
             Inventory inv = container.getInventory();
             boolean hasRawUranium = false;
             
-            for (int i = 0; i < inv.getSize(); i++) {
-                ItemStack item = inv.getItem(i);
-                if (item != null && "URANIUM_RAW".equals(recipeRegistry.getMachineItemType(item))) {
-                    item.setAmount(item.getAmount() - 1);
-                    hasRawUranium = true;
-                    break;
-                }
+            // Берем уран ТОЛЬКО из 0 слота (Input)
+            ItemStack inputItem = inv.getItem(0);
+            if (inputItem != null && "URANIUM_RAW".equals(recipeRegistry.getMachineItemType(inputItem))) {
+                inputItem.setAmount(inputItem.getAmount() - 1);
+                hasRawUranium = true;
             }
             
             if (hasRawUranium) {
                 if (storage.consumeEnergy(block, ENERGY_PER_OPERATION)) {
                     ItemStack isotope = recipeRegistry.getUraniumItems().getItem("URANIUM_ISOTOPE");
-                    outputItem(isotope, inv);
+                    // Кладем выход в 1 слот
+                    outputToSpecificSlot(isotope, inv, 1);
                     
-                    // Шанс 10% на токсичные отходы
+                    // Шанс 10% на токсичные отходы - во 2 слот
                     if (random.nextDouble() < 0.1) {
                         ItemStack waste = recipeRegistry.getUraniumItems().getItem("TOXIC_WASTE");
-                        outputItem(waste, inv);
+                        outputToSpecificSlot(waste, inv, 2);
+                    }
+                } else {
+                    // Если энергия закончилась прямо перед крафтом, возвращаем предмет
+                    if (inputItem != null) {
+                        inputItem.setAmount(inputItem.getAmount() + 1);
                     }
                 }
             }
         }
     }
     
-    private void outputItem(ItemStack item, Inventory inv) {
-        PipeNetwork.PathResult pathResult = network.findShortestPath(controllerLoc);
+    private void outputToSpecificSlot(ItemStack item, Inventory inv, int slot) {
+        PipeNetwork.PathResult pathResult = network.findShortestPath(controllerLoc, com.astrabuild.model.NetworkNode.NodeType.PIPE_ENERGY);
         if (pathResult != null && !pathResult.path().isEmpty()) {
             deliveryService.deliverItem(pathResult.destination(), item);
         } else {
-            inv.addItem(item).forEach((index, leftover) -> {
-                controllerLoc.getWorld().dropItemNaturally(controllerLoc.clone().add(0, 1, 0), leftover);
-            });
+            ItemStack existing = inv.getItem(slot);
+            if (existing == null || existing.getType().isAir()) {
+                inv.setItem(slot, item);
+            } else if (existing.isSimilar(item) && existing.getAmount() + item.getAmount() <= existing.getMaxStackSize()) {
+                existing.setAmount(existing.getAmount() + item.getAmount());
+            } else {
+                // Если слот забит другим предметом или переполнен, выбрасываем в мир
+                controllerLoc.getWorld().dropItemNaturally(controllerLoc.clone().add(0, 1, 0), item);
+            }
         }
     }
 }

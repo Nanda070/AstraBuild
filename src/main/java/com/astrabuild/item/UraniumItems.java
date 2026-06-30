@@ -78,8 +78,8 @@ public class UraniumItems {
     private ItemStack createRawUranium() {
         ItemStack item = new ItemStack(Material.RAW_IRON);
         ItemMeta meta = item.getItemMeta();
-        meta.setDisplayName("§2Сырой Уран");
-        meta.setLore(List.of("§7Радиоактивная руда.", "§7Требует обогащения в Центрифуге."));
+        meta.setDisplayName("§2Необработанный Уран");
+        meta.setLore(List.of("§7Радиоактивная руда.", "§7Нужно обогащение в Центрифуге."));
         meta.getPersistentDataContainer().set(itemTypeKey, PersistentDataType.STRING, "URANIUM_RAW");
         item.setItemMeta(meta);
         return item;
@@ -99,7 +99,7 @@ public class UraniumItems {
         ItemStack item = new ItemStack(Material.END_ROD);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName("§aТопливный Стержень");
-        meta.setLore(List.of("§7Топливо для Ядерного Реактора."));
+        meta.setLore(List.of("§7Топливо для ядерного реактора."));
         meta.getPersistentDataContainer().set(itemTypeKey, PersistentDataType.STRING, "FUEL_ROD");
         item.setItemMeta(meta);
         return item;
@@ -109,7 +109,7 @@ public class UraniumItems {
         ItemStack item = new ItemStack(Material.END_ROD);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName("§8Отработанный Стержень");
-        meta.setLore(List.of("§cОПАСНО: Высокий уровень радиации!", "§7Подлежит утилизации."));
+        meta.setLore(List.of("§cУГРОЗА: Высокая радиация!", "§7Подлежит утилизации."));
         meta.getPersistentDataContainer().set(itemTypeKey, PersistentDataType.STRING, "DEPLETED_FUEL_ROD");
         item.setItemMeta(meta);
         return item;
@@ -119,7 +119,7 @@ public class UraniumItems {
         ItemStack item = new ItemStack(Material.SLIME_BALL);
         ItemMeta meta = item.getItemMeta();
         meta.setDisplayName("§2Токсичные отходы");
-        meta.setLore(List.of("§cОПАСНО: Побочный продукт обогащения.", "§7Излучает смертельную радиацию."));
+        meta.setLore(List.of("§cУГРОЗА: Побочный продукт обогащения.", "§7Наносят сильнейший урон."));
         meta.getPersistentDataContainer().set(itemTypeKey, PersistentDataType.STRING, "TOXIC_WASTE");
         item.setItemMeta(meta);
         return item;
@@ -129,8 +129,8 @@ public class UraniumItems {
         ItemStack item = new ItemStack(material);
         LeatherArmorMeta meta = (LeatherArmorMeta) item.getItemMeta();
         meta.setDisplayName("§e" + name);
-        meta.setColor(Color.fromRGB(220, 220, 0)); // Ядовито-желтый
-        meta.setLore(List.of("§7Защищает от радиации.", "§cПолный сет необходим для выживания."));
+        meta.setColor(Color.fromRGB(220, 220, 0));
+        meta.setLore(List.of("§7Защищает от радиации.", "§cПолный сет блокирует весь урон от радиации."));
         meta.getPersistentDataContainer().set(itemTypeKey, PersistentDataType.STRING, typeId);
         item.setItemMeta(meta);
         return item;

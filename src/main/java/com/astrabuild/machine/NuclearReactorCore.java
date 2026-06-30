@@ -19,15 +19,14 @@ public class NuclearReactorCore {
     private final IndustrialManager manager;
     
     private int heat = 0; // 0 to 10000
-    private int warningTicks = 0; // Для 3 минут сирены
-    private int coolantMb = 0; // Внутренний буфер охладителя
+    private int warningTicks = 0;
+    private int coolantMb = 0;
     
-    // Энергия в EU/t (будет храниться в блоке через MachineDataStorage)
-    private static final int ENERGY_PER_TICK = 500;
+    private static final int HEAT_PER_TICK = 5;
+    private static final int ENERGY_PER_TICK = 1000;
     public static final int MAX_HEAT = 10000;
-    private static final int HEAT_PER_TICK = 10;
-    private static final int MAX_COOLANT_BUFFER = 20000; // 20 ведер внутри
-    
+    private static final int MAX_COOLANT_BUFFER = 1000;
+
     public NuclearReactorCore(Plugin plugin, Location coreLocation, MachineDataStorage storage, PipeNetwork network, IndustrialManager manager) {
         this.plugin = plugin;
         this.coreLocation = coreLocation;
@@ -60,32 +59,27 @@ public class NuclearReactorCore {
         int cz = coreLocation.getBlockZ();
         
         int ironCount = 0;
-        int glassCount = 0;
 
-        for (int y = -1; y <= 1; y++) {
+        for (int y = -1; y <= 0; y++) {
             for (int x = -1; x <= 1; x++) {
                 for (int z = -1; z <= 1; z++) {
                     if (x == 0 && y == 0 && z == 0) continue; // Core
                     
                     org.bukkit.block.Block b = world.getBlockAt(cx + x, cy + y, cz + z);
-                    if (y == -1 || y == 1) {
-                        // Top and bottom layers should be iron blocks
+                    if (y == -1) {
+                        // Bottom layer should be iron blocks
                         if (b.getType() == org.bukkit.Material.IRON_BLOCK) ironCount++;
                     } else {
-                        // Middle layer
+                        // Middle layer corners
                         if (Math.abs(x) == 1 && Math.abs(z) == 1) {
-                            // Corners
                             if (b.getType() == org.bukkit.Material.IRON_BLOCK) ironCount++;
-                        } else {
-                            // Sides
-                            if (b.getType() == org.bukkit.Material.GLASS) glassCount++;
                         }
                     }
                 }
             }
         }
         
-        return ironCount >= 20 && glassCount >= 4;
+        return ironCount >= 13;
     }
 
     private int tickCounter = 0;
@@ -101,15 +95,13 @@ public class NuclearReactorCore {
         tickCounter++;
         updateHologram(true);
 
-        // Внутренняя генерация (копим в буфере каждый тик)
         storage.addEnergy(coreLocation.getBlock(), ENERGY_PER_TICK);
 
-        // Раздача энергии в сеть и забор воды раз в секунду (20 тиков)
         if (tickCounter >= 20) {
             tickCounter = 0;
             
             int totalGenerated = storage.getEnergy(coreLocation.getBlock());
-            java.util.Set<Location> connectedNodes = network.getConnectedNodes(coreLocation);
+            java.util.Set<Location> connectedNodes = network.getConnectedNodes(coreLocation, com.astrabuild.model.NetworkNode.NodeType.PIPE_ENERGY);
             
             for (Location loc : connectedNodes) {
                 if (totalGenerated <= 0) break;
@@ -127,19 +119,14 @@ public class NuclearReactorCore {
                 }
             }
             
-            // Если мы отдали часть энергии, перезаписываем буфер
             if (storage.getEnergy(coreLocation.getBlock()) != totalGenerated) {
                 storage.consumeEnergy(coreLocation.getBlock(), storage.getEnergy(coreLocation.getBlock()) - totalGenerated);
             }
 
-            // Тянем охладитель из резервуаров по сети труб батчем
             pullCoolantFromNetwork();
-
-            // Обновляем пассивное охлаждение раз в секунду
             updatePassiveCooling();
         }
 
-        // Охлаждение
         int cooling = passiveCooling;
         if (heat > 0 && coolantMb > 0) {
             int canCool = Math.min(20, coolantMb);
@@ -155,7 +142,6 @@ public class NuclearReactorCore {
         if (heat >= MAX_HEAT) {
             triggerMeltdown();
         } else if (heat >= MAX_HEAT * 0.8) {
-            // Сирена за 3 минуты до взрыва
             if (warningTicks % 20 == 0) {
                 coreLocation.getWorld().playSound(coreLocation, Sound.BLOCK_BEACON_ACTIVATE, 5.0f, 0.1f);
                 coreLocation.getWorld().playSound(coreLocation, Sound.ENTITY_ENDER_DRAGON_GROWL, 5.0f, 0.1f);
@@ -167,12 +153,12 @@ public class NuclearReactorCore {
     }
 
     private void updateHologram(boolean isIntact) {
-        if (tickCounter % 20 != 0 && isIntact) return; // Update once per second
+        if (tickCounter % 20 != 0 && isIntact) return; 
         com.astrabuild.visual.HologramManager hm = com.astrabuild.AstraBuildPlugin.getInstance().getHologramManager();
         if (hm == null) return;
         
         if (!isIntact) {
-            hm.updateHologram(coreLocation, "§c[РЕАКТОР СЛОМАН]\n§7Восстановите оболочку 3x3x3");
+            hm.updateHologram(coreLocation, "§c[РЕАКТОР СЛОМАН]\n§7Нужна база 3x3\n§7и 4 железных столба");
             return;
         }
 
@@ -180,17 +166,14 @@ public class NuclearReactorCore {
         int max = storage.getMaxEnergy("REACTOR_CORE");
         String heatColor = heat < 3000 ? "§a" : heat < 7000 ? "§e" : "§c";
         
-        String text = "§b⚡ Ядерный Реактор\n" +
-                      heatColor + "🌡 Температура: " + heat + " / 10000\n" +
-                      "§e⚡ Энергия: " + energy + " / " + max;
+        String text = "§b⚡ Ядерный Реактор\n" + heatColor + "🔥 Температура: " + heat + " / 10000\n" + "§e⚡ Энергия: " + energy + " / " + max;
         hm.updateHologram(coreLocation, text);
     }
 
     private void pullCoolantFromNetwork() {
         if (coolantMb >= MAX_COOLANT_BUFFER) return;
         
-        // Поиск танков в сети
-        for (Location connected : network.getConnectedNodes(coreLocation)) {
+        for (Location connected : network.getConnectedNodes(coreLocation, com.astrabuild.model.NetworkNode.NodeType.PIPE_ENERGY)) {
             CoolantTankWorker tank = manager.getCoolantTanks().get(connected);
             if (tank != null) {
                 int needed = MAX_COOLANT_BUFFER - coolantMb;
@@ -217,26 +200,20 @@ public class NuclearReactorCore {
     }
 
     private void triggerMeltdown() {
-        // Удаляем данные из памяти и сети
         storage.clearMachineData(coreLocation.getBlock());
         manager.unregisterMachine(coreLocation);
         network.unregisterNode(coreLocation);
 
-        // Удаляем голограмму
         com.astrabuild.visual.HologramManager hm = com.astrabuild.AstraBuildPlugin.getInstance().getHologramManager();
         if (hm != null) hm.removeHologram(coreLocation);
 
-        // Уничтожаем блок
         coreLocation.getBlock().setType(Material.AIR);
         
-        // Взрыв Чернобыльского масштаба (радиус 50, диаметр 100)
-        // Имитируем через OrbitalStrikeManager
         OrbitalStrikeManager strikeManager = new OrbitalStrikeManager(plugin);
-        // Загрязняем чанки
         com.astrabuild.strike.RadiationManager rm = com.astrabuild.AstraBuildPlugin.getInstance().getRadiationManager();
         for (int x = -3; x <= 3; x++) {
             for (int z = -3; z <= 3; z++) {
-                rm.contaminateChunk(coreLocation.clone().add(x * 16, 0, z * 16).getChunk(), 86400000L); // На 24 часа
+                rm.contaminateChunk(coreLocation.clone().add(x * 16, 0, z * 16).getChunk(), 86400000L); // 24 hours
             }
         }
         

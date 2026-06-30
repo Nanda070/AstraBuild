@@ -28,6 +28,19 @@ public class RadiationManager {
         startRadiationTask();
     }
 
+        public void cleanArea(Location center, int radius) {
+        int chunkRadius = (radius / 16) + 1;
+        int centerCX = center.getBlockX() >> 4;
+        int centerCZ = center.getBlockZ() >> 4;
+        org.bukkit.World world = center.getWorld();
+        
+        for (int x = -chunkRadius; x <= chunkRadius; x++) {
+            for (int z = -chunkRadius; z <= chunkRadius; z++) {
+                Chunk chunk = world.getChunkAt(centerCX + x, centerCZ + z);
+                chunk.getPersistentDataContainer().remove(radiationKey);
+            }
+        }
+    }
     public void contaminateChunk(Chunk chunk, long durationMillis) {
         long endTime = System.currentTimeMillis() + durationMillis;
         chunk.getPersistentDataContainer().set(radiationKey, PersistentDataType.LONG, endTime);

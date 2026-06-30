@@ -41,6 +41,10 @@ public class AstraBuildPlugin extends JavaPlugin {
         return hologramManager;
     }
 
+    public RecipeRegistry getRecipeRegistry() {
+        return recipeRegistry;
+    }
+
     @Override
     public void onEnable() {
         instance = this;

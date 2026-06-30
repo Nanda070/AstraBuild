@@ -11,9 +11,9 @@ public class AdminGui implements InventoryHolder {
     private final Inventory inventory;
 
     public AdminGui(RecipeRegistry recipeRegistry) {
-        this.inventory = Bukkit.createInventory(this, 54, "§cАдмин-панель AstraBuild");
+        this.inventory = Bukkit.createInventory(this, 54, "Â§cÐÐ´Ð¼Ð¸Ð½-Ð¿Ð°Ð½ÐµÐ»ÑŒ AstraBuild");
         
-        // Список всех предметов для выдачи
+        // Ð¡Ð¿Ð¸ÑÐ¾Ðº Ð²ÑÐµÑ… Ð¿Ñ€ÐµÐ´Ð¼ÐµÑ‚Ð¾Ð² Ð´Ð»Ñ Ð²Ñ‹Ð´Ð°Ñ‡Ð¸
         inventory.setItem(0, recipeRegistry.getMachineItem("QUARRY"));
         inventory.setItem(1, recipeRegistry.getMachineItem("PIPE"));
         inventory.setItem(2, recipeRegistry.getMachineItem("CONNECTOR_INSERT"));
@@ -23,7 +23,7 @@ public class AdminGui implements InventoryHolder {
         inventory.setItem(6, recipeRegistry.getMachineItem("SATELLITE_TERMINAL"));
         inventory.setItem(7, recipeRegistry.getMachineItem("ORBITAL_REMOTE"));
         
-        // Эпоха атома
+        // Ð­Ð¿Ð¾Ñ…Ð° Ð°Ñ‚Ð¾Ð¼Ð°
         inventory.setItem(9, recipeRegistry.getMachineItem("COOLANT_TANK"));
         inventory.setItem(10, recipeRegistry.getMachineItem("REACTOR_CORE"));
         inventory.setItem(11, recipeRegistry.getMachineItem("CENTRIFUGE"));
@@ -37,6 +37,10 @@ public class AdminGui implements InventoryHolder {
         inventory.setItem(22, recipeRegistry.getUraniumItems().getItem("HAZMAT_CHESTPLATE"));
         inventory.setItem(23, recipeRegistry.getUraniumItems().getItem("HAZMAT_LEGGINGS"));
         inventory.setItem(24, recipeRegistry.getUraniumItems().getItem("HAZMAT_BOOTS"));
+        inventory.setItem(25, recipeRegistry.getMachineItem("NANO_CHESTPLATE"));
+        inventory.setItem(26, recipeRegistry.getMachineItem("NANO_SWORD"));
+        inventory.setItem(27, recipeRegistry.getUraniumItems().getItem("FUEL_ROD"));
+        inventory.setItem(28, recipeRegistry.getUraniumItems().getItem("DEPLETED_FUEL_ROD"));
     }
 
     @Override

@@ -11,9 +11,9 @@ public class CraftsGui implements InventoryHolder {
     private final Inventory inventory;
 
     public CraftsGui(RecipeRegistry recipeRegistry) {
-        this.inventory = Bukkit.createInventory(this, 54, "§8Крафты AstraBuild");
+        this.inventory = Bukkit.createInventory(this, 54, "Â§8ÐšÑ€Ð°Ñ„Ñ‚Ñ‹ AstraBuild");
         
-        // Список всех предметов
+        // Ð¡Ð¿Ð¸ÑÐ¾Ðº Ð²ÑÐµÑ… Ð¿Ñ€ÐµÐ´Ð¼ÐµÑ‚Ð¾Ð²
         inventory.setItem(10, recipeRegistry.getMachineItem("QUARRY"));
         inventory.setItem(11, recipeRegistry.getMachineItem("PIPE"));
         inventory.setItem(12, recipeRegistry.getMachineItem("CONNECTOR_INSERT"));
@@ -23,10 +23,10 @@ public class CraftsGui implements InventoryHolder {
         inventory.setItem(16, recipeRegistry.getMachineItem("UPGRADE_OVERCLOCKER"));
         
         inventory.setItem(22, recipeRegistry.getMachineItem("SATELLITE_TERMINAL"));
-        // Пульт не имеет крафта (он выдается из терминала), но мы можем показать его
+        // ÐŸÑƒÐ»ÑŒÑ‚ Ð½Ðµ Ð¸Ð¼ÐµÐµÑ‚ ÐºÑ€Ð°Ñ„Ñ‚Ð° (Ð¾Ð½ Ð²Ñ‹Ð´Ð°ÐµÑ‚ÑÑ Ð¸Ð· Ñ‚ÐµÑ€Ð¼Ð¸Ð½Ð°Ð»Ð°), Ð½Ð¾ Ð¼Ñ‹ Ð¼Ð¾Ð¶ÐµÐ¼ Ð¿Ð¾ÐºÐ°Ð·Ð°Ñ‚ÑŒ ÐµÐ³Ð¾
         inventory.setItem(23, recipeRegistry.getMachineItem("ORBITAL_REMOTE"));
         
-        // Атомная эра
+        // ÐÑ‚Ð¾Ð¼Ð½Ð°Ñ ÑÑ€Ð°
         inventory.setItem(28, recipeRegistry.getMachineItem("COOLANT_TANK"));
         inventory.setItem(29, recipeRegistry.getMachineItem("REACTOR_CORE"));
         inventory.setItem(30, recipeRegistry.getMachineItem("CENTRIFUGE"));
@@ -38,6 +38,9 @@ public class CraftsGui implements InventoryHolder {
         inventory.setItem(39, recipeRegistry.getUraniumItems().getItem("HAZMAT_CHESTPLATE"));
         inventory.setItem(40, recipeRegistry.getUraniumItems().getItem("HAZMAT_LEGGINGS"));
         inventory.setItem(41, recipeRegistry.getUraniumItems().getItem("HAZMAT_BOOTS"));
+        inventory.setItem(42, recipeRegistry.getMachineItem("NANO_CHESTPLATE"));
+        inventory.setItem(43, recipeRegistry.getUraniumItems().getItem("FUEL_ROD"));
+        inventory.setItem(44, recipeRegistry.getUraniumItems().getItem("DEPLETED_FUEL_ROD"));
     }
 
     @Override

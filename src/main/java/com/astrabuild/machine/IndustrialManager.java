@@ -55,11 +55,26 @@ public class IndustrialManager {
     }
 
     private void tickAll() {
-        reactors.forEach((loc, r) -> { if (r != null && isLoaded(loc)) r.runTick(); });
-        centrifuges.forEach((loc, c) -> { if (c != null && isLoaded(loc)) c.runTick(); });
-        fabricators.forEach((loc, f) -> { if (f != null && isLoaded(loc)) f.runTick(); });
-        energyStorages.forEach((loc, e) -> { if (e != null && isLoaded(loc)) e.runTick(); });
-        coolantTanks.forEach((loc, t) -> { if (t != null && isLoaded(loc)) t.runTick(); });
+        reactors.forEach((loc, r) -> { if (r != null && isLoaded(loc)) { if (storage.getMachineType(loc.getBlock()) != null) r.runTick(); else cleanupDeadMachine(loc); } });
+        centrifuges.forEach((loc, c) -> { if (c != null && isLoaded(loc)) { if (storage.getMachineType(loc.getBlock()) != null) c.runTick(); else cleanupDeadMachine(loc); } });
+        fabricators.forEach((loc, f) -> { if (f != null && isLoaded(loc)) { if (storage.getMachineType(loc.getBlock()) != null) f.runTick(); else cleanupDeadMachine(loc); } });
+        energyStorages.forEach((loc, e) -> { if (e != null && isLoaded(loc)) { if (storage.getMachineType(loc.getBlock()) != null) e.runTick(); else cleanupDeadMachine(loc); } });
+        coolantTanks.forEach((loc, t) -> { if (t != null && isLoaded(loc)) { if (storage.getMachineType(loc.getBlock()) != null) t.runTick(); else cleanupDeadMachine(loc); } });
+    }
+
+    private void cleanupDeadMachine(Location loc) {
+        org.bukkit.block.Block block = loc.getBlock();
+        if (block.getState() instanceof org.bukkit.block.Container container) {
+            for (org.bukkit.inventory.ItemStack invItem : container.getInventory().getContents()) {
+                if (invItem != null && !invItem.getType().isAir()) {
+                    loc.getWorld().dropItemNaturally(loc, invItem);
+                }
+            }
+            container.getInventory().clear();
+        }
+        unregisterMachine(loc);
+        network.unregisterNode(loc);
+        com.astrabuild.AstraBuildPlugin.getInstance().getHologramManager().removeHologram(loc);
     }
 
     private boolean isLoaded(Location loc) {
@@ -83,3 +98,4 @@ public class IndustrialManager {
         coolantTanks.clear();
     }
 }
+
