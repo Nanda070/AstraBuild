@@ -46,6 +46,15 @@ public class AstraBuildPlugin extends JavaPlugin {
         instance = this;
         saveDefaultConfig();
 
+        // Очистка брошенных голограмм от прошлых сессий
+        for (org.bukkit.World world : org.bukkit.Bukkit.getWorlds()) {
+            for (org.bukkit.entity.TextDisplay display : world.getEntitiesByClass(org.bukkit.entity.TextDisplay.class)) {
+                if (display.getPersistentDataContainer().has(new org.bukkit.NamespacedKey(this, "astrabuild_holo"), org.bukkit.persistence.PersistentDataType.BYTE)) {
+                    display.remove();
+                }
+            }
+        }
+
         // Инициализация слоя данных и логистики
         this.machineDataStorage = new MachineDataStorage(this);
         this.deliveryService = new DeliveryService(this, machineDataStorage);

@@ -102,6 +102,7 @@ public class BlockListener implements Listener {
             
             network.unregisterNode(loc);
             storage.clearMachineData(event.getBlock());
+            com.astrabuild.AstraBuildPlugin.getInstance().getHologramManager().removeHologram(loc);
             
             // Если это контейнер, вручную выбрасываем его содержимое, так как setDropItems(false) удалит и инвентарь
             if (event.getBlock().getState() instanceof org.bukkit.block.Container container) {
