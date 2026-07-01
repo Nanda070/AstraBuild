@@ -11,9 +11,9 @@ public class AdminGui implements InventoryHolder {
     private final Inventory inventory;
 
     public AdminGui(RecipeRegistry recipeRegistry) {
-        this.inventory = Bukkit.createInventory(this, 54, "Â§cÐÐ´Ð¼Ð¸Ð½-Ð¿Ð°Ð½ÐµÐ»ÑŒ AstraBuild");
+        this.inventory = Bukkit.createInventory(this, 54, "§cАдмин-панель AstraBuild");
         
-        // Ð¡Ð¿Ð¸ÑÐ¾Ðº Ð²ÑÐµÑ… Ð¿Ñ€ÐµÐ´Ð¼ÐµÑ‚Ð¾Ð² Ð´Ð»Ñ Ð²Ñ‹Ð´Ð°Ñ‡Ð¸
+        // Ð¡Ð¿Ð¸Ñ Ð¾Ðº Ð²Ñ ÐµÑ… Ð¿Ñ€ÐµÐ´Ð¼ÐµÑ‚Ð¾Ð² Ð´Ð»Ñ  Ð²Ñ‹Ð´Ð°Ñ‡Ð¸
         inventory.setItem(0, recipeRegistry.getMachineItem("QUARRY"));
         inventory.setItem(1, recipeRegistry.getMachineItem("PIPE"));
         inventory.setItem(2, recipeRegistry.getMachineItem("CONNECTOR_INSERT"));

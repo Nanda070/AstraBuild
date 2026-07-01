@@ -11,7 +11,7 @@ public class CraftsGui implements InventoryHolder {
     private final Inventory inventory;
 
     public CraftsGui(RecipeRegistry recipeRegistry) {
-        this.inventory = Bukkit.createInventory(this, 54, "Â§8ÐšÑ€Ð°Ñ„Ñ‚Ñ‹ AstraBuild");
+        this.inventory = Bukkit.createInventory(this, 54, "§8Крафты AstraBuild");
         
         // Ð¡Ð¿Ð¸ÑÐ¾Ðº Ð²ÑÐµÑ… Ð¿Ñ€ÐµÐ´Ð¼ÐµÑ‚Ð¾Ð²
         inventory.setItem(10, recipeRegistry.getMachineItem("QUARRY"));

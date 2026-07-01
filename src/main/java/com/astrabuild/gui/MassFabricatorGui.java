@@ -58,14 +58,14 @@ public class MassFabricatorGui implements InventoryHolder {
         ItemStack info = new ItemStack(Material.DIAMOND);
         ItemMeta meta = info.getItemMeta();
         if (meta != null) {
-            meta.displayName(LegacyComponentSerializer.legacySection().deserialize("Â§dÐ¡Ñ‚Ð°Ñ‚ÑƒÑ: Ð“ÐµÐ½ÐµÑ€Ð°Ñ‚Ð¾Ñ€ ÐœÐ°Ñ‚ÐµÑ€Ð¸Ð¸"));
+            meta.displayName(LegacyComponentSerializer.legacySection().deserialize("§dСтатус: Генератор Материи"));
             int energy = storage.getEnergy(machineBlock);
             meta.lore(List.of(
-                    LegacyComponentSerializer.legacySection().deserialize("Â§7Ð­Ð½ÐµÑ€Ð³Ð¸Ñ: Â§a" + energy + " Â§7/ Â§a" + storage.getMaxEnergy("MASS_FABRICATOR") + " EU"),
-                    LegacyComponentSerializer.legacySection().deserialize("Â§7ÐŸÐ¾Ñ‚Ñ€ÐµÐ±Ð»ÐµÐ½Ð¸Ðµ: Â§c1,000,000 EU/Ð°Ð»Ð¼Ð°Ð·"),
+                    LegacyComponentSerializer.legacySection().deserialize("§7Энергия: §a" + energy + " §7/ §a" + storage.getMaxEnergy("MASS_FABRICATOR") + " EU"),
+                    LegacyComponentSerializer.legacySection().deserialize("§7Потребление: §c1,000,000 EU/алмаз"),
                     LegacyComponentSerializer.legacySection().deserialize(""),
-                    LegacyComponentSerializer.legacySection().deserialize("Â§fÐ’Ñ…Ð¾Ð´: Ð£Ñ‚Ð¸Ð»ÑŒ (Ð—ÐµÐ¼Ð»Ñ, Ð±ÑƒÐ»Ñ‹Ð¶Ð½Ð¸Ðº, Ð¿ÐµÑÐ¾Ðº)"),
-                    LegacyComponentSerializer.legacySection().deserialize("Â§fÐ’Ñ‹Ñ…Ð¾Ð´: ÐÐ»Ð¼Ð°Ð·Ñ‹")
+                    LegacyComponentSerializer.legacySection().deserialize("§fВход: Утиль (Земля, булыжник, песок)"),
+                    LegacyComponentSerializer.legacySection().deserialize("§fВыход: Алмазы")
             ));
             info.setItemMeta(meta);
         }

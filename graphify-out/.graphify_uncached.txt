@@ -1,0 +1,6 @@
+C:\Users\adnan\Documents\coding\AstraBuild\CLAUDE.md
+C:\Users\adnan\Documents\coding\AstraBuild\bin\main\config.yml
+C:\Users\adnan\Documents\coding\AstraBuild\bin\main\plugin.yml
+C:\Users\adnan\Documents\coding\AstraBuild\readme.md
+C:\Users\adnan\Documents\coding\AstraBuild\src\main\resources\config.yml
+C:\Users\adnan\Documents\coding\AstraBuild\src\main\resources\plugin.yml
